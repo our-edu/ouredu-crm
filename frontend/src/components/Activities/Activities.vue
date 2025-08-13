@@ -22,6 +22,7 @@
     <div
       v-else-if="
         activities?.length ||
+        (events.data?.length && title == 'Events') ||
         (whatsappMessages.data?.length && title == 'WhatsApp')
       "
       class="activities"
@@ -33,6 +34,33 @@
           class="px-3 sm:px-10"
           :messages="whatsappMessages.data"
         />
+      </div>
+      <div v-else-if="title == 'Events'" class="activity">
+        <div v-for="(event, i) in events.data" :key="event.name">
+          <div
+            class="activity grid grid-cols-[30px_minmax(auto,_1fr)] gap-4 px-3 sm:px-10"
+          >
+            <div
+              class="z-0 relative flex justify-center before:absolute before:left-[50%] before:-z-[1] before:top-0 before:border-l before:border-outline-gray-modals"
+              :class="
+                i != events.data.length - 1 ? 'before:h-full' : 'before:h-4'
+              "
+            >
+              <div
+                class="flex h-8 w-7 items-center justify-center bg-surface-white text-ink-gray-8"
+              >
+                <EventIcon class="h-4 w-4" />
+              </div>
+            </div>
+            <EventArea
+              class="mb-4"
+              v-model="events"
+              :event="event"
+              :doctype="doctype"
+              :docname="doc?.name"
+            />
+          </div>
+        </div>
       </div>
       <div
         v-else-if="title == 'Notes'"
@@ -304,6 +332,68 @@
                 </span>
               </div>
 
+            <div class="ml-auto whitespace-nowrap">
+              <Tooltip :text="formatDate(activity.creation)">
+                <div class="text-sm text-ink-gray-5">
+                  {{ __(timeAgo(activity.creation)) }}
+                </div>
+              </Tooltip>
+            </div>
+          </div>
+          <div
+            v-if="activity.other_versions && activity.show_others"
+            class="flex flex-col gap-0.5"
+          >
+            <div
+              v-for="activity in [activity, ...activity.other_versions]"
+              class="flex items-start justify-stretch gap-2 py-1.5 text-base"
+            >
+              <div class="inline-flex flex-wrap gap-1 text-ink-gray-5">
+                <span
+                  v-if="activity.data?.field_label"
+                  class="max-w-xs truncate text-ink-gray-5"
+                >
+                  {{ __(activity.data.field_label) }}
+                </span>
+                <FeatherIcon
+                  name="arrow-right"
+                  class="mx-1 h-4 w-4 text-ink-gray-5"
+                />
+                <span v-if="activity.type">
+                  {{ startCase(__(activity.type)) }}
+                </span>
+                <span
+                  v-if="activity.data?.old_value"
+                  class="max-w-xs font-medium text-ink-gray-8"
+                >
+                  <div
+                    class="flex items-center gap-1"
+                  >
+                    <UserAvatar :user="activity.data.old_value" size="xs" />
+                    {{ getUser(activity.data.old_value).full_name }}
+                  </div>
+                  <div v-else class="truncate">
+                    {{ activity.data.old_value }}
+                  </div>
+                </span>
+                <span v-if="activity.to">{{ __('to') }}</span>
+                <span
+                  v-if="activity.data?.value"
+                  class="max-w-xs font-medium text-ink-gray-8"
+                >
+                  <div
+                    v-if="activity.options == 'User'"
+                    class="flex items-center gap-1"
+                  >
+                    <UserAvatar :user="activity.data.value" size="xs" />
+                    {{ getUser(activity.data.value).full_name }}
+                  </div>
+                  <div v-else class="truncate">
+                    {{ activity.data.value }}
+                  </div>
+                </span>
+              </div>
+
               <div class="ml-auto whitespace-nowrap">
                 <TimelineTimestamp :date="activity.creation" />
               </div>
@@ -391,13 +481,44 @@
         @updateField="(field, value) => emit('afterSave', { [field]: value })"
       />
     </div>
-    <EmptyState
+    <div
       v-else
-      :title="emptyText"
-      :description="emptyTextDescription"
-      :icon="emptyTextIcon"
-      :top="top"
-    />
+      class="flex flex-1 flex-col items-center justify-center gap-3 text-xl font-medium text-ink-gray-4"
+    >
+      <component :is="emptyTextIcon" class="h-10 w-10" />
+      <span>{{ __(emptyText) }}</span>
+      <MultiActionButton v-if="title == 'Calls'" :options="callActions" />
+      <Button
+        v-else-if="title == 'Notes'"
+        :label="__('Create Note')"
+        @click="modalRef.showNote()"
+      />
+      <Button
+        v-else-if="title == 'Emails'"
+        :label="__('New Email')"
+        @click="emailBox.show = true"
+      />
+      <Button
+        v-else-if="title == 'Comments'"
+        :label="__('New Comment')"
+        @click="emailBox.showComment = true"
+      />
+      <Button
+        v-else-if="title == 'Events'"
+        :label="__('Schedule an Event')"
+        @click="modalRef.showEvent()"
+      />
+      <Button
+        v-else-if="title == 'Tasks'"
+        :label="__('Create Task')"
+        @click="modalRef.showTask()"
+      />
+      <Button
+        v-else-if="title == 'Attachments'"
+        :label="__('Upload Attachment')"
+        @click="showFilesUploader = true"
+      />
+    </div>
   </FadedScrollableDiv>
   <div>
     <CommunicationArea
@@ -427,6 +548,7 @@
   <AllModals
     ref="modalRef"
     v-model="all_activities"
+    v-model:events="events"
     :doctype="doctype"
     :doc="doc"
   />
@@ -455,11 +577,14 @@ import UserAvatar from '@/components/UserAvatar.vue'
 import ActivityIcon from '@/components/Icons/ActivityIcon.vue'
 import EmailIcon from '@/components/Icons/EmailIcon.vue'
 import DetailsIcon from '@/components/Icons/DetailsIcon.vue'
+import CalendarIcon from '@/components/Icons/CalendarIcon.vue'
+import EventIcon from '@/components/Icons/EventIcon.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import NoteIcon from '@/components/Icons/NoteIcon.vue'
 import TaskIcon from '@/components/Icons/TaskIcon.vue'
 import AttachmentIcon from '@/components/Icons/AttachmentIcon.vue'
 import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
+import EventArea from '@/components/Activities/EventArea.vue'
 import WhatsAppArea from '@/components/Activities/WhatsAppArea.vue'
 import WhatsAppBox from '@/components/Activities/WhatsAppBox.vue'
 import LoadingIndicator from '@/components/Icons/LoadingIndicator.vue'
@@ -487,7 +612,7 @@ import { useTimelinePreferences } from '@/composables/useTimelinePreferences'
 import { whatsappEnabled } from '@/composables/whatsapp'
 import { useDocument } from '@/data/document'
 import { useTelemetry } from 'frappe-ui/frappe'
-import { Button, createResource, toast } from 'frappe-ui'
+import { Button, createResource, toast, createListResource } from 'frappe-ui'
 import { useElementVisibility } from '@vueuse/core'
 import {
   ref,
@@ -559,6 +684,47 @@ const whatsappMessages = createResource({
   auto: false,
   transform: (data) => sortByCreation(data),
   onSuccess: () => nextTick(() => scroll()),
+})
+
+const events = createListResource({
+  doctype: 'Event',
+  cache: ['calendar', props.docname],
+  fields: [
+    'name',
+    'status',
+    'subject',
+    'description',
+    'starts_on',
+    'ends_on',
+    'all_day',
+    'event_type',
+    'color',
+    'owner',
+    'reference_doctype',
+    'reference_docname',
+    'creation',
+  ],
+  filters: {
+    status: 'Open',
+    reference_doctype: props.doctype,
+    reference_docname: props.docname,
+  },
+  orderBy: 'creation desc',
+  auto: title.value == 'Events',
+  transform: (data) => {
+    return data.map((event) => {
+      if (typeof event.owner !== 'object') {
+        event.owner = {
+          label: getUser(event.owner).full_name,
+          image: getUser(event.owner).image,
+        }
+      }
+      return event
+    })
+  },
+  onSuccess: (d) => {
+    console.log(d)
+  },
 })
 
 watch(
@@ -733,6 +899,8 @@ const emptyText = computed(() => {
     text = 'No Comments Found'
   } else if (title.value == 'Data') {
     text = 'No Data Fields Added Yet'
+  } else if (title.value == 'Events') {
+    text = 'No Events'
   } else if (title.value == 'Calls') {
     text = 'No Call History'
   } else if (title.value == 'Notes') {
@@ -785,6 +953,8 @@ const emptyTextIcon = computed(() => {
     icon = CommentIcon
   } else if (title.value == 'Data') {
     icon = DetailsIcon
+  } else if (title.value == 'Events') {
+    icon = EventIcon
   } else if (title.value == 'Calls') {
     icon = PhoneIcon
   } else if (title.value == 'Notes') {
@@ -812,6 +982,9 @@ function timelineIcon(activity_type, is_lead) {
       break
     case 'comment':
       icon = CommentIcon
+      break
+    case 'event':
+      icon = CalendarIcon
       break
     case 'incoming_call':
       icon = InboundCallIcon
@@ -842,7 +1015,7 @@ watch([reload, reload_email], ([reload_value, reload_email_value]) => {
 })
 
 function scroll(hash) {
-  if (['tasks', 'notes'].includes(route.hash?.slice(1))) return
+  if (['tasks', 'notes', 'events'].includes(route.hash?.slice(1))) return
   setTimeout(() => {
     let el
     if (!hash) {

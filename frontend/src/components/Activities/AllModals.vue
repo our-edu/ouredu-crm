@@ -1,9 +1,40 @@
 <template>
-  <div></div>
+  <TaskModal
+    v-model="showTaskModal"
+    v-model:reloadTasks="activities"
+    :task="task"
+    :doctype="doctype"
+    :doc="doc?.name"
+    @after="redirect('tasks')"
+  />
+  <NoteModal
+    v-model="showNoteModal"
+    v-model:reloadNotes="activities"
+    :note="note"
+    :doctype="doctype"
+    :doc="doc?.name"
+    @after="redirect('notes')"
+  />
+  <CallLogModal
+    v-if="showCallLogModal"
+    v-model="showCallLogModal"
+    :data="callLog"
+    :referenceDoc="referenceDoc"
+    :options="{ afterInsert: () => activities.reload() }"
+  />
+  <EventModal
+    v-if="showEventModal"
+    v-model="showEventModal"
+    v-model:events="events"
+    :event="event"
+    :doctype="doctype"
+    :docname="doc?.name"
+  />
 </template>
 <script setup>
 import { useDoctypeModal } from '@/composables/doctypeModal'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
+import EventModal from '@/components/Modals/EventModal.vue'
 import { call } from 'frappe-ui'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -17,6 +48,23 @@ const activities = defineModel({ type: Object })
 const { showModal } = useDoctypeModal()
 const { updateOnboardingStep } = useOnboarding('frappecrm')
 const { capture } = useTelemetry()
+const events = defineModel('events')
+
+const showEventModal = ref(false)
+const event = ref({})
+
+function showEvent(e) {
+  event.value = e || {
+    subject: '',
+    description: '',
+    starts_on: '',
+    ends_on: '',
+    all_day: false,
+    event_type: 'Public',
+    color: 'green',
+  }
+  showEventModal.value = true
+}
 
 // Tasks
 function showTask(task) {
@@ -127,6 +175,7 @@ function redirect(tabName) {
 }
 
 defineExpose({
+  showEvent,
   showTask,
   deleteTask,
   updateTaskStatus,
