@@ -452,6 +452,7 @@ const tabs = computed(() => {
       name: 'Evaluation',
       label: __('Evaluation'),
       icon: CheckCircleIcon,
+      condition: () => doc.value?.status === 'Screening',
     },
     {
       name: 'WhatsApp',
