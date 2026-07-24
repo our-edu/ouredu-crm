@@ -81,7 +81,7 @@ const routes = [
   {
     path: '/contacts/:contactId',
     name: 'Contact',
-    component: () => import(`@/pages/${handleMobileView('Contact')}.vue`),
+    component: () => import('@/pages/CustomContact.vue'), //import(`@/pages/${handleMobileView('Contact')}.vue`),
     props: true,
   },
   {
