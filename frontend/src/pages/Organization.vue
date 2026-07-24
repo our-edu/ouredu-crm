@@ -112,6 +112,20 @@
                   icon="lucide-link"
                   @click="openWebsite"
                 />
+                 <Button
+                  v-if="linkedLead"
+                  :label="__('Go to Lead')"
+                  size="sm"
+                  iconLeft="arrow-right"
+                  @click="router.push({ name: 'Lead', params: { leadId: linkedLead } })"
+                />
+                <Button
+                  v-else
+                  :label="__('Create Lead')"
+                  size="sm"
+                  iconLeft="plus"
+                  @click="createLeadFromOrg()"
+                />
               </div>
             </div>
           </template>
@@ -268,7 +282,34 @@ const errorMessage = ref('')
 const showDeleteLinkedDocModal = ref(false)
 const showContactModal = ref(false)
 const showDealModal = ref(false)
+const linkedLead = ref(null)
 
+async function fetchLinkedLead() {
+  try {
+    const result = await call('ouredu_fcrm_customizations.api.organization.get_linked_lead', {
+      organization: props.organizationId,
+    })
+    linkedLead.value = result || null
+  } catch {
+    linkedLead.value = null
+  }
+}
+
+async function createLeadFromOrg() {
+  try {
+    const leadName = await call(
+      'ouredu_fcrm_customizations.api.organization.create_lead_from_organization',
+      { organization: props.organizationId },
+    )
+    if (leadName) {
+      linkedLead.value = leadName
+      toast.success(__('Lead created successfully'))
+      router.push({ name: 'Lead', params: { leadId: leadName } })
+    }
+  } catch (e) {
+    toast.error(e.messages?.[0] || __('Failed to create lead'))
+  }
+}
 const {
   document: organization,
   permissions,
@@ -279,7 +320,10 @@ const {
 const canDelete = computed(() => permissions.data?.permissions?.delete || false)
 
 onMounted(async () => {
-  if (organization.doc) await triggerOnRender()
+  if (organization.doc) {
+    await triggerOnRender()
+    await fetchLinkedLead()
+  }
 })
 
 const breadcrumbs = computed(() => {
@@ -593,6 +637,15 @@ function showAddressModal(_address) {
     },
   })
 }
+
+// Fetch linked lead when doc is available
+watch(
+  () => organization.doc,
+  async (doc) => {
+    if (doc) await fetchLinkedLead()
+  },
+  { once: true },
+)
 
 // Setup custom actions from Form Scripts
 watch(
