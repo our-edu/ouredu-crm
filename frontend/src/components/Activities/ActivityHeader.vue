@@ -33,7 +33,7 @@
       <template #prefix>
         <EventIcon class="h-4 w-4" />
       </template>
-      <span>{{ __('Schedule an event') }}</span>
+      <span>{{ __('Schedule an Event') }}</span>
     </Button>
     <Button
       v-else-if="title == 'Notes'"
@@ -128,7 +128,7 @@ const defaultActions = computed(() => {
     },
     {
       icon: h(EventIcon, { class: 'h-4 w-4' }),
-      label: __('Schedule an event'),
+      label: __('Schedule an Event'),
       onClick: () => props.modalRef.showEvent(),
     },
     {

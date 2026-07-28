@@ -208,6 +208,7 @@
               />
             </div>
           </div>
+        </div>
           <div
             v-if="activity.activity_type == 'communication'"
             class="pb-5 mt-px"
@@ -367,6 +368,7 @@
                   class="max-w-xs font-medium text-ink-gray-8"
                 >
                   <div
+                    v-if="activity.options == 'User'"
                     class="flex items-center gap-1"
                   >
                     <UserAvatar :user="activity.data.old_value" size="xs" />

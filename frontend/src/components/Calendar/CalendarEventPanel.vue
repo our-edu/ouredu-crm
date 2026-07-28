@@ -273,13 +273,13 @@ import DealsIcon from '@/components/Icons/DealsIcon.vue'
 import Link from '@/components/Controls/Link.vue'
 import EditIcon from '@/components/Icons/EditIcon.vue'
 import DescriptionIcon from '@/components/Icons/DescriptionIcon.vue'
-import TimePicker from './TimePicker.vue'
 import { globalStore } from '@/stores/global'
 import { getFormat } from '@/utils'
 import {
   TextInput,
   Switch,
   DatePicker,
+  TimePicker,
   TextEditor,
   ErrorMessage,
   Dropdown,

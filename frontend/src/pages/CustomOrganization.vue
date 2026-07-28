@@ -535,7 +535,7 @@ function openEmailBox() {
 
 async function fetchLinkedLead() {
   try {
-    const result = await call('crm.api.organization.get_linked_lead', {
+    const result = await call('ouredu_fcrm_customizations.api.organization.get_linked_lead', {
       organization: props.organizationId,
     })
     linkedLead.value = result || null
@@ -547,7 +547,7 @@ async function fetchLinkedLead() {
 async function createLeadFromOrg() {
   try {
     const leadName = await call(
-      'crm.api.organization.create_lead_from_organization',
+      'ouredu_fcrm_customizations.api.organization.create_lead_from_organization',
       { organization: props.organizationId },
     )
     if (leadName) {
