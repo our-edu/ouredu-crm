@@ -37,7 +37,8 @@
       <Button
         :label="__('Convert to Deal')"
         variant="solid"
-        @click="showConvertToDealModal = true"
+        :loading="convertingToDeal"
+        @click="convertToDeal"
       />
     </template>
   </LayoutHeader>
@@ -347,11 +348,6 @@
       afterInsert: (_doc) => addContact(_doc.name),
     }"
   />
-  <ConvertToDealModal
-    v-if="showConvertToDealModal"
-    v-model="showConvertToDealModal"
-    :lead="doc"
-  />
   <FilesUploader
     v-model="showFilesUploader"
     doctype="CRM Lead"
@@ -411,7 +407,6 @@ import FilesUploader from '@/components/FilesUploader/FilesUploader.vue'
 import SidePanelLayout from '@/components/SidePanelLayout.vue'
 import SLASection from '@/components/SLASection.vue'
 import CustomActions from '@/components/CustomActions.vue'
-import ConvertToDealModal from '@/components/Modals/ConvertToDealModal.vue'
 import {
   openWebsite,
   setupCustomizations,
@@ -461,8 +456,8 @@ const activities = ref(null)
 const errorTitle = ref('')
 const errorMessage = ref('')
 const showDeleteLinkedDocModal = ref(false)
-const showConvertToDealModal = ref(false)
 const showFilesUploader = ref(false)
+const convertingToDeal = ref(false)
 
 const {
   triggerOnChange,
@@ -735,6 +730,37 @@ function updateField(name, value) {
 
 function deleteLead() {
   showDeleteLinkedDocModal.value = true
+}
+
+async function convertToDeal() {
+  convertingToDeal.value = true
+  let _deal = await call('crm.fcrm.doctype.crm_lead.crm_lead.convert_to_deal', {
+    lead: props.leadId,
+    deal: { status: 'Qualification' },
+    existing_organization: doc.value.custom_org,
+  }).catch((err) => {
+    if (err.exc_type == 'MandatoryError') {
+      const errorMessage = err.messages
+        .map((msg) => {
+          let arr = msg.split(': ')
+          return arr[arr.length - 1].trim()
+        })
+        .join(', ')
+
+      toast.error(
+        errorMessage.toLowerCase().includes('required')
+          ? __(errorMessage)
+          : __('{0} is required', [errorMessage]),
+      )
+      return
+    }
+    toast.error(__('Error converting to deal: {0}', [err.messages?.[0]]))
+  })
+  convertingToDeal.value = false
+
+  if (_deal) {
+    router.push({ name: 'Deal', params: { dealId: _deal } })
+  }
 }
 
 function openEmailBox() {
