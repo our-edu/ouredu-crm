@@ -155,6 +155,49 @@
         </div>
         <div class="flex items-start">
           <div class="text-base text-ink-gray-7 mt-1.5 w-3/12">
+            {{ __('Event Category') }}
+          </div>
+          <div class="w-9/12">
+            <FormControl
+              v-model="_event.eventCategory"
+              class="w-full"
+              type="select"
+              :options="[
+                { label: __('Event'), value: 'Event' },
+                { label: __('Meeting'), value: 'Meeting' },
+                { label: __('Call'), value: 'Call' },
+                {
+                  label: __('Sent/Received Email'),
+                  value: 'Sent/Received Email',
+                },
+                { label: __('Other'), value: 'Other' },
+              ]"
+              variant="outline"
+            />
+          </div>
+        </div>
+        <div class="flex items-start">
+          <div class="text-base text-ink-gray-7 mt-1.5 w-3/12">
+            {{ __('Event Status') }}
+          </div>
+          <div class="w-9/12">
+            <FormControl
+              v-model="_event.eventStatus"
+              class="w-full"
+              type="select"
+              :options="[
+                { label: __('Open'), value: 'Open' },
+                { label: __('Waiting for Reply'), value: 'Waiting for Reply' },
+                { label: __('Completed'), value: 'Completed' },
+                { label: __('Not Answered'), value: 'Not Answered' },
+                { label: __('Cancelled'), value: 'Cancelled' },
+              ]"
+              variant="outline"
+            />
+          </div>
+        </div>
+        <div class="flex items-start">
+          <div class="text-base text-ink-gray-7 mt-1.5 w-3/12">
             {{ __('Location') }}
           </div>
           <div class="w-9/12">
@@ -178,6 +221,22 @@
               :content="_event.description"
               :placeholder="__('Add Description.')"
               @change="(val) => (_event.description = val)"
+            />
+          </div>
+        </div>
+        <div class="flex items-start">
+          <div class="text-base text-ink-gray-7 mt-1.5 w-3/12">
+            {{ __('Comment') }}
+            <span v-if="isCommentRequired" class="text-ink-red-2">*</span>
+          </div>
+          <div class="w-9/12">
+            <FormControl
+              v-model="_event.comment"
+              class="w-full"
+              type="textarea"
+              variant="outline"
+              :placeholder="__('Add Comment')"
+              :required="isCommentRequired"
             />
           </div>
         </div>
@@ -287,6 +346,9 @@ const _event = ref({
   toTime: '',
   isFullDay: false,
   eventType: 'Public',
+  eventCategory: 'Event',
+  eventStatus: 'Open',
+  comment: '',
   location: '',
   color: 'green',
   referenceDoctype: '',
@@ -298,6 +360,10 @@ const _event = ref({
 const dirty = computed(() => {
   return JSON.stringify(_event.value) !== JSON.stringify(oldEvent.value)
 })
+
+const isCommentRequired = computed(() =>
+  ['Completed', 'Cancelled'].includes(_event.value.eventStatus),
+)
 
 const peoples = computed({
   get() {
@@ -328,6 +394,9 @@ onMounted(() => {
       toTime: end.format('HH:mm'),
       isFullDay: props.event.all_day,
       eventType: props.event.event_type,
+      eventCategory: props.event.event_category || 'Event',
+      eventStatus: props.event.custom_event_status || 'Open',
+      comment: props.event.custom_comment || '',
       location: props.event.location || '',
       color: props.event.color,
       referenceDoctype: props.event.reference_doctype,
@@ -389,6 +458,13 @@ function update() {
     return
   }
 
+  if (isCommentRequired.value && !_event.value.comment) {
+    error.value = __('Comment is required when Event Status is {0}', [
+      _event.value.eventStatus,
+    ])
+    return
+  }
+
   if (_event.value.id && _event.value.id !== 'duplicate') {
     updateEvent()
   } else {
@@ -405,6 +481,9 @@ function createEvent() {
       ends_on: _event.value.toDate + ' ' + _event.value.toTime,
       all_day: _event.value.isFullDay || false,
       event_type: _event.value.eventType,
+      event_category: _event.value.eventCategory,
+      custom_event_status: _event.value.eventStatus,
+      custom_comment: _event.value.comment,
       location: _event.value.location || '',
       color: _event.value.color,
       reference_doctype: props.doctype,
@@ -436,6 +515,9 @@ function updateEvent() {
       ends_on: _event.value.toDate + ' ' + _event.value.toTime,
       all_day: _event.value.isFullDay,
       event_type: _event.value.eventType,
+      event_category: _event.value.eventCategory,
+      custom_event_status: _event.value.eventStatus,
+      custom_comment: _event.value.comment,
       location: _event.value.location || '',
       color: _event.value.color,
       reference_doctype: props.doctype,
