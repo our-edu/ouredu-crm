@@ -9,13 +9,18 @@ export class FCRMNote {
           label: __('Open {0}', [label]),
           onClick: (close) => {
             if (!this.doc.reference_docname) return
-            let name =
-              this.doc.reference_doctype == 'CRM Deal' ? 'Deal' : 'Lead'
-            let params = { leadId: this.doc.reference_docname }
-            if (name == 'Deal') {
-              params = { dealId: this.doc.reference_docname }
+            let routes = {
+              'CRM Lead': { name: 'Lead', param: 'leadId' },
+              'CRM Deal': { name: 'Deal', param: 'dealId' },
+              'CRM Organization': { name: 'Organization', param: 'organizationId' },
+              Contact: { name: 'Contact', param: 'contactId' },
             }
-            this.router.push({ name: name, params: params })
+            let route = routes[this.doc.reference_doctype]
+            if (!route) return
+            this.router.push({
+              name: route.name,
+              params: { [route.param]: this.doc.reference_docname },
+            })
             close?.()
           },
         },
