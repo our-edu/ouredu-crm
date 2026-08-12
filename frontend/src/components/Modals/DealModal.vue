@@ -275,8 +275,11 @@ onMounted(async () => {
   if (!deal.doc.deal_owner) {
     deal.doc.deal_owner = getUser().name
   }
-  if (!deal.doc.status && dealStatuses.value[0].value) {
-    deal.doc.status = dealStatuses.value[0].value
+  if (!deal.doc.status) {
+    let preferredStatus = ['Qualified (Answered Questions)', 'Qualification'].find(
+      (status) => dealStatuses.value.some((option) => option.value === status),
+    )
+    deal.doc.status = preferredStatus || dealStatuses.value[0]?.value
   }
 
   // Cached-data case: tabs.data is already set so the watch won't fire.
