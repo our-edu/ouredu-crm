@@ -214,7 +214,10 @@
   <ContactModal
     v-if="showContactModal"
     v-model="showContactModal"
-    :contact="{ company_name: props.organizationId }"
+    :contact="{
+      company_name: props.organizationId,
+      custom_org: props.organizationId,
+    }"
     :options="{ redirect: false, afterInsert: () => contacts.reload() }"
   />
   <DealModal

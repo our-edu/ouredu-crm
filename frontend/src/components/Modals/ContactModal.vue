@@ -179,7 +179,6 @@ function handleContactUpdate(doc) {
 
 const tabs = createResource({
   url: 'crm.fcrm.doctype.crm_fields_layout.crm_fields_layout.get_fields_layout',
-  cache: ['QuickEntry', 'Contact'],
   params: { doctype: 'Contact', type: 'Quick Entry' },
   auto: true,
   transform: (_tabs) => {
@@ -191,7 +190,12 @@ const tabs = createResource({
               field.read_only = false
             } else if (field.fieldname == 'mobile_no') {
               field.read_only = false
-            } else if (field.fieldname == 'address') {
+            } else if (
+              ['company_name', 'custom_org'].includes(field.fieldname) &&
+              props.contact?.[field.fieldname]
+            ) {
+              field.read_only = true
+            } else if (field.fieldname === 'address') {
               field.create = (value, close) => {
                 _contact.doc.address = value
                 showAddressModal()
