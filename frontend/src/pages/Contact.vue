@@ -12,12 +12,6 @@
         v-if="contact._actions?.length"
         :actions="contact._actions"
       />
-      <Button
-        variant="solid"
-        :label="__('Create Deal')"
-        iconLeft="plus"
-        @click="showDealModal = true"
-      />
     </template>
   </LayoutHeader>
   <div v-if="contact.doc" class="flex h-full overflow-hidden">
@@ -151,13 +145,6 @@
                 @click="router.push({ name: 'Lead', params: { leadId: linkedLead } })"
               />
               <Button
-                v-else
-                :label="__('Create Lead')"
-                size="sm"
-                iconLeft="plus"
-                @click="createLead()"
-              />
-              <Button
                 v-if="canDelete"
                 :label="__('Delete')"
                 theme="red"
@@ -194,11 +181,6 @@
     :docname="contact.doc?.name"
     name="Contacts"
   />
-  <DealModal
-    v-if="showDealModal"
-    v-model="showDealModal"
-    :defaults="{ contact: props.contactId }"
-  />
   <FilesUploader
     v-model="showFilesUploader"
     doctype="Contact"
@@ -222,7 +204,6 @@ import LayoutHeader from '@/components/LayoutHeader.vue'
 import DealsListView from '@/components/ListViews/DealsListView.vue'
 import EmptyState from '@/components/ListViews/EmptyState.vue'
 import CustomActions from '@/components/CustomActions.vue'
-import DealModal from '@/components/Modals/DealModal.vue'
 import DeleteLinkedDocModal from '@/components/DeleteLinkedDocModal.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import Email2Icon from '@/components/Icons/Email2Icon.vue'
@@ -292,7 +273,6 @@ const reload = ref(false)
 const activities = ref(null)
 const showFilesUploader = ref(false)
 const showDeleteLinkedDocModal = ref(false)
-const showDealModal = ref(false)
 const linkedLead = ref(null)
 
 const {
@@ -620,21 +600,6 @@ async function fetchLinkedLead() {
     linkedLead.value = result || null
   } catch {
     linkedLead.value = null
-  }
-}
-
-async function createLead() {
-  try {
-    const leadName = await call('crm.api.contact.create_lead_from_contact', {
-      contact: props.contactId,
-    })
-    if (leadName) {
-      linkedLead.value = leadName
-      toast.success(__('Lead created successfully'))
-      router.push({ name: 'Lead', params: { leadId: leadName } })
-    }
-  } catch (e) {
-    toast.error(e.messages?.[0] || __('Failed to create lead'))
   }
 }
 

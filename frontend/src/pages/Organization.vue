@@ -13,11 +13,11 @@
         :actions="organization._actions"
       />
       <Button
-        v-if="tabs[tabIndex]?.name === 'Deals'"
+        v-if="tabs[tabIndex]?.name === 'Leads'"
         variant="solid"
-        :label="__('Create Deal')"
+        :label="__('Create Lead')"
         iconLeft="plus"
-        @click="showDealModal = true"
+        @click="showLeadModal = true"
       />
       <Button
         v-if="tabs[tabIndex]?.name === 'Contacts'"
@@ -36,7 +36,7 @@
     >
       <template #tab-panel>
         <Activities
-          v-if="!['Deals', 'Contacts'].includes(tabs[tabIndex]?.name)"
+          v-if="!['Leads', 'Deals', 'Contacts'].includes(tabs[tabIndex]?.name)"
           ref="activities"
           v-model:reload="reload"
           v-model:tabIndex="tabIndex"
@@ -45,8 +45,15 @@
           :tabs="activityTabs"
         />
         <div v-else class="flex flex-1 flex-col overflow-y-auto">
+          <LeadsListView
+            v-if="tabs[tabIndex]?.name === 'Leads' && leadRows.length"
+            class="mt-4"
+            :rows="leadRows"
+            :columns="leadColumns"
+            :options="{ selectable: false, showTooltip: false }"
+          />
           <DealsListView
-            v-if="tabs[tabIndex]?.name === 'Deals' && dealRows.length"
+            v-else-if="tabs[tabIndex]?.name === 'Deals' && dealRows.length"
             class="mt-4"
             :rows="dealRows"
             :columns="dealColumns"
@@ -160,20 +167,6 @@
                 @click="openWebsite"
               />
               <Button
-                v-if="linkedLead"
-                :label="__('Go to Lead')"
-                size="sm"
-                iconLeft="arrow-right"
-                @click="router.push({ name: 'Lead', params: { leadId: linkedLead } })"
-              />
-              <Button
-                v-else
-                :label="__('Create Lead')"
-                size="sm"
-                iconLeft="plus"
-                @click="createLeadFromOrg()"
-              />
-              <Button
                 v-if="canDelete"
                 :label="__('Delete')"
                 theme="red"
@@ -225,6 +218,11 @@
     v-model="showDealModal"
     :defaults="{ organization: props.organizationId }"
   />
+  <LeadModal
+    v-if="showLeadModal"
+    v-model="showLeadModal"
+    :defaults="{ custom_org: props.organizationId }"
+  />
   <FilesUploader
     v-model="showFilesUploader"
     doctype="CRM Organization"
@@ -245,12 +243,14 @@ import Resizer from '@/components/Resizer.vue'
 import SidePanelLayout from '@/components/SidePanelLayout.vue'
 import Icon from '@/components/Icon.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
+import LeadsListView from '@/components/ListViews/LeadsListView.vue'
 import DealsListView from '@/components/ListViews/DealsListView.vue'
 import ContactsListView from '@/components/ListViews/ContactsListView.vue'
 import EmptyState from '@/components/ListViews/EmptyState.vue'
 import WebsiteIcon from '@/components/Icons/WebsiteIcon.vue'
 import CameraIcon from '@/components/Icons/CameraIcon.vue'
 import Email2Icon from '@/components/Icons/Email2Icon.vue'
+import LeadsIcon from '@/components/Icons/LeadsIcon.vue'
 import DealsIcon from '@/components/Icons/DealsIcon.vue'
 import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
 import AttachmentIcon from '@/components/Icons/AttachmentIcon.vue'
@@ -266,6 +266,7 @@ import DeleteLinkedDocModal from '@/components/DeleteLinkedDocModal.vue'
 import CustomActions from '@/components/CustomActions.vue'
 import ContactModal from '@/components/Modals/ContactModal.vue'
 import DealModal from '@/components/Modals/DealModal.vue'
+import LeadModal from '@/components/Modals/LeadModal.vue'
 import { whatsappEnabled } from '@/composables/whatsapp'
 import { useActiveTabManager } from '@/composables/useActiveTabManager'
 import { useDocument } from '@/data/document'
@@ -307,7 +308,7 @@ const props = defineProps({
 const { brand } = getSettings()
 const { $dialog, $socket } = globalStore()
 const { getUser } = usersStore()
-const { getDealStatus } = statusesStore()
+const { getDealStatus, getLeadStatus } = statusesStore()
 const { doctypeMeta } = getMeta('CRM Organization')
 const { capture } = useTelemetry()
 
@@ -322,7 +323,7 @@ const showFilesUploader = ref(false)
 const showDeleteLinkedDocModal = ref(false)
 const showContactModal = ref(false)
 const showDealModal = ref(false)
-const linkedLead = ref(null)
+const showLeadModal = ref(false)
 
 const {
   document: organization,
@@ -336,7 +337,6 @@ const canDelete = computed(() => permissions.data?.permissions?.delete || false)
 onMounted(async () => {
   if (organization.doc) {
     await triggerOnRender()
-    await fetchLinkedLead()
   }
 })
 
@@ -397,23 +397,29 @@ const tabs = computed(() => {
       condition: () => whatsappEnabled.value,
     },
     {
-      name: 'Deals',
-      label: __('Deals'),
-      icon: DealsIcon,
-      count: computed(() => deals.data?.length || 0),
-    },
-    {
       name: 'Contacts',
       label: __('Contacts'),
       icon: ContactsIcon,
       count: computed(() => contacts.data?.length || 0),
+    },
+    {
+      name: 'Leads',
+      label: __('Leads'),
+      icon: LeadsIcon,
+      count: computed(() => leads.data?.length || 0),
+    },
+    {
+      name: 'Deals',
+      label: __('Deals'),
+      icon: DealsIcon,
+      count: computed(() => deals.data?.length || 0),
     },
   ]
   return tabOptions.filter((tab) => (tab.condition ? tab.condition() : true))
 })
 
 const activityTabs = computed(() =>
-  tabs.value.filter((t) => !['Deals', 'Contacts'].includes(t.name)),
+  tabs.value.filter((t) => !['Leads', 'Deals', 'Contacts'].includes(t.name)),
 )
 
 const { tabIndex, changeTabTo } = useActiveTabManager(tabs, 'lastOrganizationTab')
@@ -428,33 +434,6 @@ function openEmailBox() {
       activities.value.emailBox.show = true
     }
   })
-}
-
-async function fetchLinkedLead() {
-  try {
-    const result = await call('crm.api.organization.get_linked_lead', {
-      organization: props.organizationId,
-    })
-    linkedLead.value = result || null
-  } catch {
-    linkedLead.value = null
-  }
-}
-
-async function createLeadFromOrg() {
-  try {
-    const leadName = await call(
-      'crm.api.organization.create_lead_from_organization',
-      { organization: props.organizationId },
-    )
-    if (leadName) {
-      linkedLead.value = leadName
-      toast.success(__('Lead created successfully'))
-      router.push({ name: 'Lead', params: { leadId: leadName } })
-    }
-  } catch (e) {
-    toast.error(e.messages?.[0] || __('Failed to create lead'))
-  }
 }
 
 async function deleteOrganization() {
@@ -527,6 +506,26 @@ function getParsedSections(_sections) {
   })
 }
 
+const leads = createListResource({
+  type: 'list',
+  doctype: 'CRM Lead',
+  cache: ['leads', props.organizationId],
+  fields: [
+    'name',
+    'lead_name',
+    'image',
+    'status',
+    'email',
+    'mobile_no',
+    'lead_owner',
+    'modified',
+  ],
+  filters: { custom_org: props.organizationId },
+  orderBy: 'modified desc',
+  pageLength: 20,
+  auto: true,
+})
+
 const deals = createListResource({
   type: 'list',
   doctype: 'CRM Deal',
@@ -569,6 +568,11 @@ const contacts = createListResource({
 
 const { getFormattedCurrency } = getMeta('CRM Deal')
 
+const leadRows = computed(() => {
+  if (!leads.data) return []
+  return leads.data.map((row) => getLeadRowObject(row))
+})
+
 const dealRows = computed(() => {
   if (!deals.data) return []
   return deals.data.map((row) => getDealRowObject(row))
@@ -578,6 +582,31 @@ const contactRows = computed(() => {
   if (!contacts.data) return []
   return contacts.data.map((row) => getContactRowObject(row))
 })
+
+function getLeadRowObject(lead) {
+  return {
+    name: lead.name,
+    lead_name: {
+      label: lead.lead_name,
+      image_label: lead.lead_name,
+      image: lead.image,
+    },
+    status: {
+      label: lead.status,
+      color: getLeadStatus(lead.status)?.color,
+    },
+    email: lead.email,
+    mobile_no: lead.mobile_no,
+    lead_owner: {
+      label: lead.lead_owner && getUser(lead.lead_owner).full_name,
+      ...(lead.lead_owner && getUser(lead.lead_owner)),
+    },
+    modified: {
+      label: formatDate(lead.modified),
+      timeAgo: __(timeAgo(lead.modified)),
+    },
+  }
+}
 
 function getDealRowObject(deal) {
   return {
@@ -625,6 +654,15 @@ function getContactRowObject(contact) {
   }
 }
 
+const leadColumns = [
+  { label: __('Name'), key: 'lead_name', width: '17rem' },
+  { label: __('Status'), key: 'status', width: '10rem' },
+  { label: __('Email'), key: 'email', width: '12rem' },
+  { label: __('Mobile No.'), key: 'mobile_no', width: '11rem' },
+  { label: __('Lead Owner'), key: 'lead_owner', width: '10rem' },
+  { label: __('Last Modified'), key: 'modified', width: '8rem' },
+]
+
 const dealColumns = [
   { label: __('Organization'), key: 'organization', width: '11rem' },
   { label: __('Amount'), key: 'annual_revenue', align: 'right', width: '9rem' },
@@ -658,14 +696,6 @@ function showAddressModal(_address) {
     },
   })
 }
-
-watch(
-  () => organization.doc,
-  async (doc) => {
-    if (doc) await fetchLinkedLead()
-  },
-  { once: true },
-)
 
 watch(
   () => organization.doc,

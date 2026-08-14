@@ -94,6 +94,10 @@ const tabs = createResource({
               field.prefix = getLeadStatus(lead.doc.status).color
             }
 
+            if (field.fieldname === 'custom_org' && props.defaults?.custom_org) {
+              field.read_only = true
+            }
+
             if (field.fieldtype === 'Table') {
               lead.doc[field.fieldname] = []
             }
