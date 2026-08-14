@@ -220,6 +220,16 @@ const links = [
     to: 'Dashboard',
   },
   {
+    label: 'Organizations',
+    icon: OrganizationsIcon,
+    to: 'Organizations',
+  },
+  {
+    label: 'Contacts',
+    icon: ContactsIcon,
+    to: 'Contacts',
+  },
+  {
     label: 'Leads',
     icon: LeadsIcon,
     to: 'Leads',
@@ -230,19 +240,14 @@ const links = [
     to: 'Deals',
   },
   {
-    label: 'Contacts',
-    icon: ContactsIcon,
-    to: 'Contacts',
-  },
-  {
-    label: 'Organizations',
-    icon: OrganizationsIcon,
-    to: 'Organizations',
-  },
-  {
     label: 'Notes',
     icon: NoteIcon,
     to: 'Notes',
+  },
+  {
+    label: 'Call Logs',
+    icon: PhoneIcon,
+    to: 'Call Logs',
   },
   {
     label: 'Tasks',
@@ -253,11 +258,6 @@ const links = [
     label: 'Calendar',
     icon: CalendarIcon,
     to: 'Calendar',
-  },
-  {
-    label: 'Call Logs',
-    icon: PhoneIcon,
-    to: 'Call Logs',
   },
 ]
 
