@@ -76,6 +76,16 @@ const { getFormattedPercent, getFormattedFloat, getFormattedCurrency } =
 const organizationsListView = ref(null)
 const showOrganizationModal = ref(false)
 
+// Badge only supports these 5 themes (gray/blue/green/orange/red) - see
+// frappe-ui's Badge.vue - so "light-blue" maps to Badge's (already fairly
+// light/pastel) subtle "blue" theme rather than a literal custom hue.
+const flowStatusColors = {
+  New: 'blue',
+  Lead: 'orange',
+  Deal: 'green',
+  Unassigned: 'red',
+}
+
 // organizations data is loaded in the ViewControls component
 const organizations = ref({})
 const loadMore = ref(1)
@@ -134,6 +144,11 @@ const rows = computed(() => {
         _rows[row] = {
           label: formatDate(organization[row]),
           timeAgo: __(timeAgo(organization[row])),
+        }
+      } else if (row === 'custom_flow_status') {
+        _rows[row] = {
+          label: organization.custom_flow_status,
+          color: flowStatusColors[organization.custom_flow_status] || 'gray',
         }
       }
     })
