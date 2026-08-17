@@ -111,6 +111,21 @@
             "
           />
           <div
+            v-else-if="column.key === 'custom_flow_status'"
+            @click="
+              (event) =>
+                emit('applyFilter', {
+                  event,
+                  idx,
+                  column,
+                  item,
+                  firstColumn: columns[0],
+                })
+            "
+          >
+            <Badge :theme="item.color" variant="subtle" :label="item.label" />
+          </div>
+          <div
             v-else-if="label"
             class="truncate text-base"
             @click="
@@ -165,6 +180,7 @@ import ListRows from '@/components/ListViews/ListRows.vue'
 import { isTranslatable, formatDuration } from '@/utils'
 import {
   Avatar,
+  Badge,
   ListView,
   ListHeader,
   ListHeaderItem,
