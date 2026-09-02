@@ -54,6 +54,15 @@
           />
         </div>
       </div>
+      <div
+        v-if="callLog?.data?._notes?.[0]"
+        class="text-sm text-ink-gray-6"
+      >
+        <div
+          v-if="callLog.data._notes[0].content"
+          v-html="sanitizeHTML(callLog.data._notes[0].content)"
+        />
+      </div>
       <div class="flex items-center flex-wrap gap-2">
         <Badge :label="formatDate(call.creation, 'MMM D, dddd')">
           <template #prefix>
@@ -106,7 +115,7 @@ import MultipleAvatar from '@/components/MultipleAvatar.vue'
 import AudioPlayer from '@/components/Activities/AudioPlayer.vue'
 import CallLogDetailModal from '@/components/Modals/CallLogDetailModal.vue'
 import { statusLabelMap, statusColorMap } from '@/utils/callLog.js'
-import { formatDate, timeAgo } from '@/utils'
+import { formatDate, timeAgo, sanitizeHTML } from '@/utils'
 import { Avatar, Badge, Tooltip, createResource } from 'frappe-ui'
 import { reactive, ref } from 'vue'
 
