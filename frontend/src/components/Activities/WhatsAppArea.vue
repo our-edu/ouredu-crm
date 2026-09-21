@@ -21,6 +21,12 @@
           class="absolute -top-2 right-0"
         />
         <div
+          v-if="whatsapp.from_name"
+          class="mb-1 text-xs font-medium text-ink-gray-5"
+        >
+          {{ whatsapp.from_name }}
+        </div>
+        <div
           v-if="whatsapp.is_reply"
           class="mb-1 cursor-pointer rounded border-0 border-l-4 bg-surface-gray-3 p-2 text-ink-gray-5"
           :class="
@@ -44,7 +50,7 @@
             <div v-if="whatsapp.header" class="text-base font-semibold">
               {{ whatsapp.header }}
             </div>
-            <div v-html="formatWhatsAppMessage(whatsapp.reply_message)" />
+            <div v-html="formatWhatsAppMessage(whatsapp.reply_message, props.searchQuery)" />
             <div v-if="whatsapp.footer" class="text-xs text-ink-gray-5">
               {{ whatsapp.footer }}
             </div>
@@ -78,18 +84,18 @@
             <div v-if="whatsapp.header" class="text-base font-semibold">
               {{ whatsapp.header }}
             </div>
-            <div v-html="formatWhatsAppMessage(whatsapp.template)" />
+            <div v-html="formatWhatsAppMessage(whatsapp.template, props.searchQuery)" />
             <div v-if="whatsapp.footer" class="text-xs text-ink-gray-5">
               {{ whatsapp.footer }}
             </div>
           </div>
           <div
             v-else-if="whatsapp.content_type == 'text'"
-            v-html="formatWhatsAppMessage(whatsapp.message)"
+            v-html="formatWhatsAppMessage(whatsapp.message, props.searchQuery)"
           />
           <div
             v-else-if="whatsapp.content_type == 'button'"
-            v-html="formatWhatsAppMessage(whatsapp.message)"
+            v-html="formatWhatsAppMessage(whatsapp.message, props.searchQuery)"
           />
           <div v-else-if="whatsapp.content_type == 'image'">
             <img
@@ -100,7 +106,7 @@
             <div
               v-if="!whatsapp.message.startsWith('/files/')"
               class="mt-1.5"
-              v-html="formatWhatsAppMessage(whatsapp.message)"
+              v-html="formatWhatsAppMessage(whatsapp.message, props.searchQuery)"
             />
           </div>
           <div
@@ -131,7 +137,7 @@
             <div
               v-if="!whatsapp.message.startsWith('/files/')"
               class="mt-1.5"
-              v-html="formatWhatsAppMessage(whatsapp.message)"
+              v-html="formatWhatsAppMessage(whatsapp.message, props.searchQuery)"
             />
           </div>
           <div class="-mb-1 flex shrink-0 items-end gap-1 text-ink-gray-5">
@@ -189,8 +195,9 @@ import { useTelemetry } from 'frappe-ui/frappe'
 import { Tooltip, Dropdown, createResource, toast } from 'frappe-ui'
 import { ref } from 'vue'
 
-defineProps({
+const props = defineProps({
   messages: { type: Array, default: () => [] },
+  searchQuery: { type: String, default: '' },
 })
 
 const list = defineModel({ type: Object })
@@ -201,7 +208,23 @@ function openFileInAnotherTab(url) {
   window.open(url, '_blank')
 }
 
-function formatWhatsAppMessage(message) {
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+// Highlighted first, on the raw text, so the mark tags it inserts (which
+// contain none of the markdown special characters below) don't interfere
+// with the formatting regexes that run afterward.
+function highlightMatch(message, query) {
+  if (!query) return message
+  return message.replace(
+    new RegExp(`(${escapeRegExp(query)})`, 'gi'),
+    '<mark class="rounded-sm bg-yellow-200 text-ink-gray-9">$1</mark>',
+  )
+}
+
+function formatWhatsAppMessage(message, searchQuery = '') {
+  message = highlightMatch(message, searchQuery)
   // if message contains _text_, make it italic
   message = message.replace(/_(.*?)_/g, '<i>$1</i>')
   // if message contains *text*, make it bold
