@@ -108,19 +108,28 @@
                 <div class="text-sm text-ink-gray-5">{{ doc.mobile_no }}</div>
               </div>
             </div>
-            <div v-if="!links.loading">
+            <div v-if="!links.loading" class="flex items-center gap-2">
               <Dropdown
-                v-if="links.data?.organization"
+                v-if="linkOptions.length"
                 :options="linkOptions"
                 placement="right"
               >
                 <Button :label="__('Linked Records')" iconLeft="link" />
               </Dropdown>
+              <Dropdown
+                v-if="convertToOptions.length > 1"
+                :options="convertToOptions"
+                placement="right"
+              >
+                <Button
+                  :label="__('Convert to')"
+                  iconRight="chevron-down"
+                />
+              </Dropdown>
               <Button
-                v-else
-                :label="__('Convert to B2B')"
-                variant="solid"
-                @click="showOrganizationModal = true"
+                v-else-if="convertToOptions.length === 1"
+                :label="`${__('Convert to')} ${convertToOptions[0].label}`"
+                @click="convertToOptions[0].onClick"
               />
             </div>
           </div>
@@ -308,6 +317,42 @@ const linkOptions = computed(() => {
   }
   return opts
 })
+
+// Only offer conversion into whichever of Organization/Lead the profile's
+// contact doesn't already have - once both exist there's nothing left to
+// convert to, only things to navigate to (see linkOptions).
+const convertToOptions = computed(() => {
+  const opts = []
+  const data = links.data
+  if (!data?.organization) {
+    opts.push({
+      label: __('B2B (Organization)'),
+      onClick: () => {
+        showOrganizationModal.value = true
+      },
+    })
+  }
+  if (!data?.leads?.length) {
+    opts.push({
+      label: __('Lead'),
+      onClick: convertToLead,
+    })
+  }
+  return opts
+})
+
+async function convertToLead() {
+  try {
+    const leadName = await call(
+      'ouredu_fcrm_customizations.api.whatsapp_profiles.create_lead_from_whatsapp_profile',
+      { profile: selectedProfile.value },
+    )
+    toast.success(__('Lead created'))
+    router.push({ name: 'Lead', params: { leadId: leadName } })
+  } catch (error) {
+    toast.error(error.messages?.[0] || __('Failed to create lead'))
+  }
+}
 
 async function onOrganizationCreated(organizationDoc) {
   try {
