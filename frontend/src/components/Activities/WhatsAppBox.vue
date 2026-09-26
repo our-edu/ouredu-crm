@@ -24,6 +24,22 @@
 
     <Button variant="ghost" icon="x" @click="reply = {}" />
   </div>
+  <div
+    v-if="contacts.length > 1"
+    class="flex items-center gap-1 px-3 pt-2 text-sm text-ink-gray-6 sm:px-10"
+  >
+    <span>{{ __('To') }}:</span>
+    <Dropdown :options="contactOptions">
+      <Button variant="ghost" size="sm">
+        {{
+          selectedContact?.full_name ||
+          selectedContact?.mobile_no ||
+          __('Select contact')
+        }}
+        <FeatherIcon name="chevron-down" class="ml-1 size-3" />
+      </Button>
+    </Dropdown>
+  </div>
   <div class="flex items-end gap-2 px-3 py-2.5 sm:px-10" v-bind="$attrs">
     <div class="flex h-8 items-center gap-2">
       <FileUploader @success="(file) => uploadFile(file)">
@@ -81,15 +97,29 @@ import {
   Dropdown,
   toast,
 } from 'frappe-ui'
-import { ref, nextTick, watch } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 
 const props = defineProps({
   doctype: { type: String, default: '' },
+  contacts: { type: Array, default: () => [] },
 })
 
 const doc = defineModel({ type: Object, default: () => ({}) })
 const whatsapp = defineModel('whatsapp', { type: Object, default: () => ({}) })
 const reply = defineModel('reply', { type: Object, default: () => ({}) })
+const selectedContact = defineModel('selectedContact', {
+  type: Object,
+  default: null,
+})
+
+const contactOptions = computed(() =>
+  props.contacts.map((contact) => ({
+    label: contact.full_name
+      ? `${contact.full_name} (${contact.mobile_no || __('no number')})`
+      : contact.mobile_no,
+    onClick: () => (selectedContact.value = contact),
+  })),
+)
 
 const { capture } = useTelemetry()
 
@@ -125,7 +155,7 @@ async function sendWhatsAppMessage() {
     reference_doctype: props.doctype,
     reference_name: doc.value.name,
     message: content.value,
-    to: doc.value.mobile_no,
+    to: selectedContact.value?.mobile_no || doc.value.mobile_no,
     attach: whatsapp.value.attach || '',
     reply_to: reply.value?.name || '',
     content_type: whatsapp.value.content_type,

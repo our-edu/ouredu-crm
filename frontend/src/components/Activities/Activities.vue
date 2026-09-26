@@ -5,6 +5,8 @@
     v-model:showWhatsappTemplates="showWhatsappTemplates"
     v-model:showFilesUploader="showFilesUploader"
     v-model:emailBox="emailBox"
+    v-model:whatsappMessageSearch="whatsappMessageSearch"
+    v-model:whatsappContactFilter="whatsappContactFilter"
     :tabs="tabs"
     :title="title"
     :doc="doc"
@@ -25,16 +27,17 @@
     <div
       v-else-if="
         activities?.length ||
-        (whatsappMessages.data?.length && title == 'WhatsApp')
+        (filteredWhatsappMessages.length && title == 'WhatsApp')
       "
       class="activities"
     >
-      <div v-if="title == 'WhatsApp' && whatsappMessages.data?.length">
+      <div v-if="title == 'WhatsApp' && filteredWhatsappMessages.length">
         <WhatsAppArea
           v-model="whatsappMessages"
           v-model:reply="replyMessage"
           class="px-3 sm:px-10"
-          :messages="whatsappMessages.data"
+          :messages="filteredWhatsappMessages"
+          :search-query="whatsappMessageSearch"
         />
       </div>
       <div
@@ -422,7 +425,9 @@
       v-model="doc"
       v-model:reply="replyMessage"
       v-model:whatsapp="whatsappMessages"
+      v-model:selectedContact="selectedWhatsAppContact"
       :doctype="doctype"
+      :contacts="whatsappContacts"
       @scroll="scroll"
     />
   </div>
@@ -495,7 +500,13 @@ import { usersStore } from '@/stores/users'
 import { whatsappEnabled } from '@/composables/whatsapp'
 import { useDocument } from '@/data/document'
 import { useTelemetry } from 'frappe-ui/frappe'
-import { Button, Tooltip, createResource, toast } from 'frappe-ui'
+import {
+  Button,
+  Tooltip,
+  createResource,
+  createListResource,
+  toast,
+} from 'frappe-ui'
 import { useElementVisibility } from '@vueuse/core'
 import {
   ref,
@@ -557,7 +568,7 @@ const all_activities = createResource({
 const showWhatsappTemplates = ref(false)
 
 const whatsappMessages = createResource({
-  url: 'crm.api.whatsapp.get_whatsapp_messages',
+  url: 'ouredu_fcrm_customizations.api.whatsapp.get_whatsapp_messages',
   cache: ['whatsapp_messages', props.docname],
   params: {
     reference_doctype: props.doctype,
@@ -575,6 +586,115 @@ watch(
   },
   { immediate: true },
 )
+
+// Organization has no contacts child table of its own (unlike Lead's
+// custom_contacts / Deal's contacts, which are already part of `doc` since
+// useDocument fetches the full document) - fetch its contacts the same way
+// the Organization page's own "Contacts" tab does (Contact.company_name).
+const organizationContacts = createListResource({
+  type: 'list',
+  doctype: 'Contact',
+  cache: ['whatsapp_organization_contacts', props.docname],
+  fields: ['name', 'full_name', 'mobile_no'],
+  filters: { company_name: props.docname },
+  pageLength: 100,
+  auto: props.doctype === 'CRM Organization',
+})
+
+// One or more Contacts linked to the current Lead/Deal/Organization, each
+// normalized to { contact, full_name, mobile_no, is_primary } - powers the
+// "To" contact picker in WhatsAppBox so the user can choose which of them
+// to message, instead of always messaging doc.mobile_no.
+const whatsappContacts = computed(() => {
+  let contacts = []
+  if (props.doctype === 'CRM Deal') {
+    contacts = (doc.value.contacts || []).map((row) => ({
+      contact: row.contact,
+      full_name: row.full_name,
+      mobile_no: row.mobile_no,
+      is_primary: row.is_primary,
+    }))
+  } else if (props.doctype === 'CRM Lead') {
+    contacts = (doc.value.custom_contacts || []).map((row) => ({
+      contact: row.contact,
+      full_name: row.full_name,
+      mobile_no: row.mobile_no,
+      is_primary: row.is_primary,
+    }))
+  } else if (props.doctype === 'CRM Organization') {
+    contacts = (organizationContacts.data || []).map((row) => ({
+      contact: row.name,
+      full_name: row.full_name,
+      mobile_no: row.mobile_no,
+      is_primary: false,
+    }))
+  }
+  // A contact with no phone number can't receive a WhatsApp message, so
+  // it's not a valid pick in the recipient dropdown.
+  return contacts.filter((c) => c.mobile_no)
+})
+
+const selectedWhatsAppContact = ref(null)
+
+watch(
+  whatsappContacts,
+  (contacts) => {
+    if (!contacts?.length) {
+      selectedWhatsAppContact.value = null
+      return
+    }
+    // Keep the current selection if it's still one of the linked contacts,
+    // otherwise default to the primary contact, else the first one.
+    if (
+      selectedWhatsAppContact.value &&
+      contacts.some(
+        (c) => c.contact === selectedWhatsAppContact.value.contact,
+      )
+    ) {
+      return
+    }
+    selectedWhatsAppContact.value =
+      contacts.find((c) => c.is_primary) || contacts[0]
+  },
+  { immediate: true },
+)
+
+// Falls back to doc.mobile_no when nothing resolved above (e.g. no linked
+// contacts at all), preserving the previous behaviour for that case.
+const whatsappRecipientNumber = computed(
+  () => selectedWhatsAppContact.value?.mobile_no || doc.value.mobile_no,
+)
+
+const whatsappMessageSearch = ref('')
+const whatsappContactFilter = ref('')
+
+// Search matches the message body (including a resolved template's text),
+// and the contact filter matches from_name - which is already the owner's
+// name for Outgoing messages, and "<contact name> (<number>)" or the bare
+// number for Incoming ones (see ouredu_fcrm_customizations.api.whatsapp),
+// so a single substring match against it covers "owner name" and "client
+// name or number" respectively.
+const filteredWhatsappMessages = computed(() => {
+  let data = whatsappMessages.data || []
+
+  if (whatsappMessageSearch.value) {
+    const query = whatsappMessageSearch.value.toLowerCase()
+    data = data.filter((message) =>
+      [message.message, message.template].some((text) =>
+        text?.toLowerCase().includes(query),
+      ),
+    )
+  }
+
+  if (whatsappContactFilter.value) {
+    const query = whatsappContactFilter.value.toLowerCase()
+    data = data.filter((message) =>
+      message.from_name?.toLowerCase().includes(query),
+    )
+  }
+
+  return data
+})
 
 onBeforeUnmount(() => {
   $socket.off('whatsapp_message')
@@ -607,7 +727,7 @@ function sendTemplate(template) {
     params: {
       reference_doctype: props.doctype,
       reference_name: props.docname,
-      to: doc.value.mobile_no,
+      to: whatsappRecipientNumber.value,
       template,
     },
     auto: true,
