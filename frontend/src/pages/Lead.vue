@@ -50,15 +50,26 @@
     >
       <template #tab-panel>
         <Activities
+          v-if="tabs[tabIndex]?.name !== 'Deals'"
           ref="activities"
           v-model:reload="reload"
           v-model:tabIndex="tabIndex"
           doctype="CRM Lead"
           :docname="leadId"
-          :tabs="tabs"
+          :tabs="activityTabs"
           @beforeSave="beforeStatusChange"
           @afterSave="reloadResources"
         />
+        <div v-else class="flex flex-1 flex-col overflow-y-auto">
+          <DealsListView
+            v-if="dealRows.length"
+            class="mt-4"
+            :rows="dealRows"
+            :columns="dealColumns"
+            :options="{ selectable: false, showTooltip: false }"
+          />
+          <EmptyState v-else :icon="DealsIcon" name="Deals" />
+        </div>
       </template>
     </Tabs>
     <Resizer class="flex flex-col justify-between border-l" side="right">
@@ -393,6 +404,9 @@ import CameraIcon from '@/components/Icons/CameraIcon.vue'
 import LinkIcon from '@/components/Icons/LinkIcon.vue'
 import AttachmentIcon from '@/components/Icons/AttachmentIcon.vue'
 import CheckCircleIcon from '@/components/Icons/CheckCircleIcon.vue'
+import DealsIcon from '@/components/Icons/DealsIcon.vue'
+import DealsListView from '@/components/ListViews/DealsListView.vue'
+import EmptyState from '@/components/ListViews/EmptyState.vue'
 import LoadingIndicator from '@/components/Icons/LoadingIndicator.vue'
 import ArrowUpRightIcon from '@/components/Icons/ArrowUpRightIcon.vue'
 import SuccessIcon from '@/components/Icons/SuccessIcon.vue'
@@ -413,10 +427,14 @@ import {
   copyToClipboard,
   validateIsImageFile,
   isTranslatable,
+  formatDate,
+  timeAgo,
 } from '@/utils'
 import { getView } from '@/utils/view'
 import { getSettings } from '@/stores/settings'
 import { globalStore } from '@/stores/global'
+import { usersStore } from '@/stores/users.js'
+import { organizationsStore } from '@/stores/organizations.js'
 import { statusesStore } from '@/stores/statuses'
 import { getMeta } from '@/stores/meta'
 import { useDocument } from '@/data/document'
@@ -441,7 +459,9 @@ import { useActiveTabManager } from '@/composables/useActiveTabManager'
 
 const { brand } = getSettings()
 const { $dialog, $socket, makeCall } = globalStore()
-const { statusOptions, getLeadStatus } = statusesStore()
+const { statusOptions, getLeadStatus, getDealStatus } = statusesStore()
+const { getUser } = usersStore()
+const { getOrganization } = organizationsStore()
 const { doctypeMeta } = getMeta('CRM Lead')
 
 const route = useRoute()
@@ -613,11 +633,84 @@ const tabs = computed(() => {
       icon: WhatsAppIcon,
       condition: () => whatsappEnabled.value,
     },
+    // Keep last: Activities gets the tabs without it (activityTabs), so
+    // the indexes of the other tabs must stay the same.
+    {
+      name: 'Deals',
+      label: __('Deals'),
+      icon: DealsIcon,
+      count: computed(() => deals.data?.length || 0),
+    },
   ]
   return tabOptions.filter((tab) => (tab.condition ? tab.condition() : true))
 })
 
+const activityTabs = computed(() =>
+  tabs.value.filter((t) => t.name !== 'Deals'),
+)
+
 const { tabIndex, changeTabTo } = useActiveTabManager(tabs, 'lastLeadTab')
+
+// Deals created from this lead (CRM Deal.lead is set by convert_to_deal)
+const deals = createResource({
+  url: 'frappe.client.get_list',
+  cache: ['lead_deals', props.leadId],
+  params: {
+    doctype: 'CRM Deal',
+    filters: { lead: props.leadId },
+    fields: [
+      'name',
+      'organization',
+      'currency',
+      'annual_revenue',
+      'status',
+      'email',
+      'mobile_no',
+      'deal_owner',
+      'modified',
+    ],
+    order_by: 'modified desc',
+    limit_page_length: 0,
+  },
+  auto: true,
+})
+
+const { getFormattedCurrency } = getMeta('CRM Deal')
+
+const dealRows = computed(() =>
+  (deals.data || []).map((deal) => ({
+    name: deal.name,
+    organization: {
+      label: deal.organization,
+      logo: getOrganization(deal.organization)?.organization_logo,
+    },
+    annual_revenue: getFormattedCurrency('annual_revenue', deal),
+    status: {
+      label: deal.status,
+      color: getDealStatus(deal.status)?.color,
+    },
+    email: deal.email,
+    mobile_no: deal.mobile_no,
+    deal_owner: {
+      label: deal.deal_owner && getUser(deal.deal_owner).full_name,
+      ...(deal.deal_owner && getUser(deal.deal_owner)),
+    },
+    modified: {
+      label: formatDate(deal.modified),
+      timeAgo: __(timeAgo(deal.modified)),
+    },
+  })),
+)
+
+const dealColumns = [
+  { label: __('Organization'), key: 'organization', width: '11rem' },
+  { label: __('Amount'), key: 'annual_revenue', align: 'right', width: '9rem' },
+  { label: __('Status'), key: 'status', width: '10rem' },
+  { label: __('Email'), key: 'email', width: '12rem' },
+  { label: __('Mobile No.'), key: 'mobile_no', width: '11rem' },
+  { label: __('Deal Owner'), key: 'deal_owner', width: '10rem' },
+  { label: __('Last Modified'), key: 'modified', width: '8rem' },
+]
 
 const sections = createResource({
   url: 'crm.fcrm.doctype.crm_fields_layout.crm_fields_layout.get_sidepanel_sections',
@@ -766,9 +859,13 @@ async function convertToDeal() {
 function openEmailBox() {
   let currentTab = tabs.value[tabIndex.value]
   if (!['Emails', 'Comments', 'Activities'].includes(currentTab.name)) {
-    activities.value.changeTabTo('emails')
+    // Activities is unmounted on the Deals tab, so switch via the page's tab manager
+    if (activities.value) activities.value.changeTabTo('emails')
+    else changeTabTo('emails')
   }
-  nextTick(() => (activities.value.emailBox.show = true))
+  nextTick(() => {
+    if (activities.value?.emailBox) activities.value.emailBox.show = true
+  })
 }
 
 function statusLabel(status) {
