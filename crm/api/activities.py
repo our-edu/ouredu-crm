@@ -679,10 +679,13 @@ def get_linked_calls(name: str):
 		],
 	)
 
-	linked_calls = frappe.db.get_all(
-		"Dynamic Link", filters={"link_name": name, "parenttype": "CRM Call Log"}, pluck="parent"
-	)
-
+	linked_calls = [
+		name for name in frappe.db.get_all(
+			"Dynamic Link",
+			filters={"link_name": name, "parenttype": "CRM Call Log"},
+			pluck="parent",
+			) if name not in set(call.get("name") for call in calls)
+	]
 	notes = []
 	tasks = []
 
