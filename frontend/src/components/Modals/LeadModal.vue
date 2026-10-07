@@ -53,9 +53,9 @@ import { sessionStore } from '@/stores/session'
 import { isMobileView } from '@/composables/settings'
 import { showQuickEntryModal, quickEntryProps } from '@/composables/modals'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
-import { createResource } from 'frappe-ui'
+import { call, createResource } from 'frappe-ui'
 import { useDocument } from '@/data/document'
-import { computed, onMounted, ref, nextTick } from 'vue'
+import { computed, onMounted, ref, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -98,6 +98,16 @@ const tabs = createResource({
               field.read_only = true
             }
 
+            if (field.fieldname === 'custom_from_contact') {
+              // Only list contacts belonging to the lead's organization
+              Object.defineProperty(field, 'link_filters', {
+                enumerable: true,
+                configurable: true,
+                get: () =>
+                  JSON.stringify({ custom_org: leadOrganization.value || '' }),
+              })
+            }
+
             if (field.fieldtype === 'Table') {
               lead.doc[field.fieldname] = []
             }
@@ -107,6 +117,31 @@ const tabs = createResource({
     })
   },
 })
+
+const leadOrganization = computed(
+  () => lead.doc.custom_org || lead.doc.organization,
+)
+
+watch(leadOrganization, (newOrg, oldOrg) => {
+  if (oldOrg && newOrg !== oldOrg && lead.doc.custom_from_contact) {
+    lead.doc.custom_from_contact = null
+  }
+})
+
+watch(
+  () => lead.doc.custom_from_contact,
+  async (contact) => {
+    if (!contact) return
+    const { first_name, last_name } = await call('frappe.client.get_value', {
+      doctype: 'Contact',
+      filters: { name: contact },
+      fieldname: ['first_name', 'last_name'],
+    })
+    if (lead.doc.custom_from_contact !== contact) return
+    lead.doc.first_name = first_name || ''
+    lead.doc.last_name = last_name || ''
+  },
+)
 
 const createLead = createResource({
   url: 'frappe.client.insert',
