@@ -724,6 +724,23 @@ def get_linked_calls(name: str):
 				tasks.append(call.link_name)
 
 		_calls = [call for call in _calls if call.get("link_doctype") not in ["FCRM Note", "CRM Task"]]
+
+		# A call log can have several Dynamic Link rows in its own "links"
+		# table (e.g. Organization + Lead + Deal, all added at once by
+		# ouredu_fcrm_customizations' _apply_links_to_log) - the join above
+		# has no filter narrowing Link down to the one we searched for, so
+		# it returns one row per link. Dedupe back down to one row per call.
+		seen_call_names = set()
+		deduped_calls = []
+		for call in _calls:
+			if call["name"] in seen_call_names:
+				continue
+			seen_call_names.add(call["name"])
+			call.pop("link_doctype", None)
+			call.pop("link_name", None)
+			deduped_calls.append(call)
+		_calls = deduped_calls
+
 		if _calls:
 			calls = calls + _calls
 

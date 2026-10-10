@@ -29,6 +29,12 @@ export function useEvent({
 
   const eventsResource = createListResource({
     doctype: 'Event',
+    // Also picks up Events only linked via their "links" Dynamic Link
+    // table (not just a matching reference_doctype/reference_docname) -
+    // insert/setValue/delete below still go through the normal
+    // doctype-based frappe.client.* methods regardless of this override,
+    // only the list-fetch itself is replaced.
+    url: 'ouredu_fcrm_customizations.api.event.get_events',
     cache: ['calendar-events', docname],
     fields: [
       'name',
