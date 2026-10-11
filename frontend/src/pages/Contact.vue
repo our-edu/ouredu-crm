@@ -29,6 +29,7 @@
           doctype="Contact"
           :docname="props.contactId"
           :tabs="activityTabs"
+          @beforeSave="() => contact.save.submit()"
         />
         <div v-else class="flex flex-1 flex-col overflow-y-auto">
           <DealsListView
