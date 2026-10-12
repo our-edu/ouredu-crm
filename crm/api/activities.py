@@ -11,17 +11,34 @@ from crm.fcrm.doctype.crm_call_log.crm_call_log import parse_call_log
 
 
 @frappe.whitelist()
-def get_activities(name: str):
-	if frappe.db.exists("CRM Deal", name):
-		return get_deal_activities(name)
-	elif frappe.db.exists("CRM Lead", name):
-		return get_lead_activities(name)
-	elif frappe.db.exists("Contact", name):
-		return get_contact_activities(name)
-	elif frappe.db.exists("CRM Organization", name):
-		return get_organization_activities(name)
-	else:
-		frappe.throw(_("Document not found"), frappe.DoesNotExistError)
+def get_activities(name: str, doctype: str | None = None):
+	dispatch = {
+		"CRM Deal": get_deal_activities,
+		"CRM Lead": get_lead_activities,
+		"Contact": get_contact_activities,
+		"CRM Organization": get_organization_activities,
+	}
+
+	if doctype:
+		# Caller knows which doctype it's asking about - use it directly
+		# rather than guessing, since document names aren't unique across
+		# different doctypes (e.g. a Contact with no first/last name falls
+		# back to its company_name for its own name - see
+		# Contact.autoname() - so it can collide with the exact name of the
+		# CRM Organization it belongs to).
+		if doctype not in dispatch or not frappe.db.exists(doctype, name):
+			frappe.throw(_("Document not found"), frappe.DoesNotExistError)
+		return dispatch[doctype](name)
+
+	# Fallback for callers that don't pass doctype: guess by checking
+	# existence in each doctype, in this fixed priority order. Ambiguous
+	# (and wrong) whenever the same name exists in more than one of these
+	# doctypes - prefer passing doctype explicitly instead.
+	for check_doctype, handler in dispatch.items():
+		if frappe.db.exists(check_doctype, name):
+			return handler(name)
+
+	frappe.throw(_("Document not found"), frappe.DoesNotExistError)
 
 
 def get_deal_activities(name: str):
