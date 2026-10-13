@@ -37,7 +37,7 @@
       </ListHeaderItem>
     </ListHeader>
     <ListRows
-      v-slot="{ idx, column, item }"
+      v-slot="{ idx, column, item, row }"
       class="mx-3 sm:mx-5"
       :rows="rows"
       doctype="CRM Organization"
@@ -125,6 +125,14 @@
           >
             <Badge :theme="item.color" variant="subtle" :label="item.label" />
           </div>
+          <NameCellContactsPopover
+            v-else-if="column.key === 'organization_name' && label"
+            doctype="CRM Organization"
+            :docname="row.name"
+            class="truncate text-base"
+          >
+            {{ getLabel(label, column) }}
+          </NameCellContactsPopover>
           <div
             v-else-if="label"
             class="truncate text-base"
@@ -177,6 +185,7 @@ import HeartIcon from '@/components/Icons/HeartIcon.vue'
 import RatingInput from '@/components/Controls/RatingInput.vue'
 import ListBulkActions from '@/components/ListBulkActions.vue'
 import ListRows from '@/components/ListViews/ListRows.vue'
+import NameCellContactsPopover from '@/components/ListViews/NameCellContactsPopover.vue'
 import { isTranslatable, formatDuration } from '@/utils'
 import {
   Avatar,

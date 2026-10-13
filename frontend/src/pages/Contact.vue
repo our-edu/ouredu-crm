@@ -5,6 +5,16 @@
         <template #prefix="{ item }">
           <Icon v-if="item.icon" :icon="item.icon" class="mr-2 h-4" />
         </template>
+        <template #suffix="{ item }">
+          <NameCellContactsPopover
+            v-if="item.isCurrentContact"
+            doctype="Contact"
+            :docname="props.contactId"
+            flat
+          >
+            {{ item.displayLabel }}
+          </NameCellContactsPopover>
+        </template>
       </Breadcrumbs>
     </template>
     <template #right-header>
@@ -204,6 +214,7 @@ import SidePanelLayout from '@/components/SidePanelLayout.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
 import DealsListView from '@/components/ListViews/DealsListView.vue'
 import EmptyState from '@/components/ListViews/EmptyState.vue'
+import NameCellContactsPopover from '@/components/ListViews/NameCellContactsPopover.vue'
 import CustomActions from '@/components/CustomActions.vue'
 import DeleteLinkedDocModal from '@/components/DeleteLinkedDocModal.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
@@ -311,7 +322,9 @@ const breadcrumbs = computed(() => {
   }
 
   items.push({
-    label: title.value,
+    label: '',
+    displayLabel: title.value,
+    isCurrentContact: true,
     route: { name: 'Contact', params: { contactId: props.contactId } },
   })
   return items

@@ -174,6 +174,14 @@
                 })
             "
           />
+          <NameCellContactsPopover
+            v-else-if="['name', 'organization'].includes(column.key) && label"
+            doctype="CRM Deal"
+            :docname="row.name"
+            class="truncate text-base"
+          >
+            {{ getLabel(label, column) }}
+          </NameCellContactsPopover>
           <div
             v-else-if="label"
             class="truncate text-base"
@@ -224,6 +232,7 @@ import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import RatingInput from '@/components/Controls/RatingInput.vue'
 import ListBulkActions from '@/components/ListBulkActions.vue'
 import ListRows from '@/components/ListViews/ListRows.vue'
+import NameCellContactsPopover from '@/components/ListViews/NameCellContactsPopover.vue'
 import { isTranslatable, formatDuration } from '@/utils'
 import {
   Avatar,

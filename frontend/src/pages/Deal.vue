@@ -5,6 +5,15 @@
         <template #prefix="{ item }">
           <Icon v-if="item.icon" :icon="item.icon" class="mr-2 h-4" />
         </template>
+        <template #suffix="{ item }">
+          <NameCellContactsPopover
+            v-if="item.isCurrentDeal"
+            doctype="CRM Deal"
+            :docname="props.dealId"
+          >
+            {{ item.displayLabel }}
+          </NameCellContactsPopover>
+        </template>
       </Breadcrumbs>
     </template>
     <template v-if="!errorTitle" #right-header>
@@ -211,9 +220,13 @@
                             :image="contact.image"
                             size="md"
                           />
-                          <div class="truncate">
+                          <NameCellContactsPopover
+                            doctype="Contact"
+                            :docname="contact.name"
+                            flat
+                          >
                             {{ contact.full_name }}
-                          </div>
+                          </NameCellContactsPopover>
                           <Badge
                             v-if="contact.is_primary"
                             class="ml-2"
@@ -344,6 +357,7 @@
 import DeleteLinkedDocModal from '@/components/DeleteLinkedDocModal.vue'
 import ErrorPage from '@/components/ErrorPage.vue'
 import Icon from '@/components/Icon.vue'
+import NameCellContactsPopover from '@/components/ListViews/NameCellContactsPopover.vue'
 import Resizer from '@/components/Resizer.vue'
 import LoadingIndicator from '@/components/Icons/LoadingIndicator.vue'
 import ActivityIcon from '@/components/Icons/ActivityIcon.vue'
@@ -536,7 +550,9 @@ const breadcrumbs = computed(() => {
   }
 
   items.push({
-    label: title.value,
+    label: '',
+    displayLabel: title.value,
+    isCurrentDeal: true,
     route: { name: 'Deal', params: { dealId: props.dealId } },
   })
   return items
