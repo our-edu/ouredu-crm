@@ -177,6 +177,7 @@
     doctype="CRM Organization"
     :options="{
       hideAssign: true,
+      hideDelete: true,
     }"
   />
 </template>

@@ -1,3 +1,13 @@
+const REFERENCE_ROUTES = {
+  'CRM Lead': (name) => ({ name: 'Lead', params: { leadId: name } }),
+  'CRM Deal': (name) => ({ name: 'Deal', params: { dealId: name } }),
+  'CRM Organization': (name) => ({
+    name: 'Organization',
+    params: { organizationId: name },
+  }),
+  Contact: (name) => ({ name: 'Contact', params: { contactId: name } }),
+}
+
 export class CRMTask {
   onRender() {
     if (this.doc.reference_doctype && this.doc.reference_docname) {
@@ -9,13 +19,9 @@ export class CRMTask {
           label: __('Open {0}', [label]),
           onClick: (close) => {
             if (!this.doc.reference_docname) return
-            let name =
-              this.doc.reference_doctype == 'CRM Deal' ? 'Deal' : 'Lead'
-            let params = { leadId: this.doc.reference_docname }
-            if (name == 'Deal') {
-              params = { dealId: this.doc.reference_docname }
-            }
-            this.router.push({ name: name, params: params })
+            let toRoute = REFERENCE_ROUTES[this.doc.reference_doctype]
+            if (!toRoute) return
+            this.router.push(toRoute(this.doc.reference_docname))
             close?.()
           },
         },

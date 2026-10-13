@@ -120,6 +120,33 @@ function deleteValues(selections, unselectAll) {
   }
 }
 
+function askAssignToMe(selections, unselectAll) {
+  $dialog({
+    title: __('Ask assign to me'),
+    message: __(
+      'Are you sure you want to request assignment of {0} organization(s) to yourself?',
+      [selections.size],
+    ),
+    variant: 'solid',
+    theme: 'blue',
+    actions: [
+      {
+        label: __('Request'),
+        variant: 'solid',
+        onClick: (close) => {
+          call('ouredu_fcrm_customizations.api.org_assignment_request.create_request', {
+            organizations: Array.from(selections),
+          }).then(() => {
+            toast.success(__('Assignment request created'))
+            unselectAll()
+            close()
+          })
+        },
+      },
+    ],
+  })
+}
+
 const showAssignmentModal = ref(false)
 const bulkAssignees = ref([])
 
@@ -194,6 +221,13 @@ function bulkActions(selections, unselectAll) {
     actions.push({
       label: __('Convert to Deal'),
       onClick: () => convertToDeal(selections, unselectAll),
+    })
+  }
+
+  if (props.doctype === 'CRM Organization') {
+    actions.unshift({
+      label: __('Ask assign to me'),
+      onClick: () => askAssignToMe(selections, unselectAll),
     })
   }
 

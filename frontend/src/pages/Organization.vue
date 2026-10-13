@@ -567,8 +567,9 @@ const contacts = createListResource({
     'name',
     'full_name',
     'image',
+    'designation',
     'email_id',
-    'mobile_no',
+    'custom_phone_numbers',
     'company_name',
     'modified',
   ],
@@ -653,12 +654,9 @@ function getContactRowObject(contact) {
       image_label: contact.full_name,
       image: contact.image,
     },
+    designation: contact.designation,
     email: contact.email_id,
-    mobile_no: contact.mobile_no,
-    company_name: {
-      label: contact.company_name,
-      logo: organization.doc?.organization_logo,
-    },
+    custom_phone_numbers: contact.custom_phone_numbers,
     modified: {
       label: formatDate(contact.modified),
       timeAgo: __(timeAgo(contact.modified)),
@@ -687,9 +685,9 @@ const dealColumns = [
 
 const contactColumns = [
   { label: __('Name'), key: 'full_name', width: '17rem' },
+  { label: __('Designation'), key: 'designation', width: '12rem' },
   { label: __('Email'), key: 'email', width: '12rem' },
-  { label: __('Phone'), key: 'mobile_no', width: '12rem' },
-  { label: __('Organization'), key: 'company_name', width: '12rem' },
+  { label: __('Phone Numbers'), key: 'custom_phone_numbers', width: '12rem' },
   { label: __('Last Modified'), key: 'modified', width: '8rem' },
 ]
 
