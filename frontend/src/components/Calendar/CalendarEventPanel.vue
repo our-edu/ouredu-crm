@@ -108,7 +108,7 @@
         class="flex items-center px-4.5 py-1 text-ink-gray-7"
       >
         <component
-          :is="_event.referenceDoctype == 'CRM Lead' ? LeadsIcon : DealsIcon"
+          :is="REFERENCE_ICONS[_event.referenceDoctype] || DealsIcon"
           class="size-4"
         />
         <Link
@@ -554,6 +554,8 @@ import PeopleIcon from '@/components/Icons/PeopleIcon.vue'
 import ArrowUpRightIcon from '@/components/Icons/ArrowUpRightIcon.vue'
 import LeadsIcon from '@/components/Icons/LeadsIcon.vue'
 import DealsIcon from '@/components/Icons/DealsIcon.vue'
+import OrganizationsIcon from '@/components/Icons/OrganizationsIcon.vue'
+import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
 import Link from '@/components/Controls/Link.vue'
 import EditIcon from '@/components/Icons/EditIcon.vue'
 import DescriptionIcon from '@/components/Icons/DescriptionIcon.vue'
@@ -977,16 +979,28 @@ const colors = Object.keys(colorMap).map((color) => ({
   },
 }))
 
+const REFERENCE_ROUTES = {
+  'CRM Lead': (name) => ({ name: 'Lead', params: { leadId: name } }),
+  'CRM Deal': (name) => ({ name: 'Deal', params: { dealId: name } }),
+  'CRM Organization': (name) => ({
+    name: 'Organization',
+    params: { organizationId: name },
+  }),
+  Contact: (name) => ({ name: 'Contact', params: { contactId: name } }),
+}
+
+const REFERENCE_ICONS = {
+  'CRM Lead': LeadsIcon,
+  'CRM Deal': DealsIcon,
+  'CRM Organization': OrganizationsIcon,
+  Contact: ContactsIcon,
+}
+
 function redirect() {
   if (_event.value.referenceDocname) {
-    let name = _event.value.referenceDoctype === 'CRM Lead' ? 'Lead' : 'Deal'
-
-    let params =
-      _event.value.referenceDoctype == 'CRM Lead'
-        ? { leadId: _event.value.referenceDocname }
-        : { dealId: _event.value.referenceDocname }
-
-    router.push({ name, params })
+    let toRoute = REFERENCE_ROUTES[_event.value.referenceDoctype]
+    if (!toRoute) return
+    router.push(toRoute(_event.value.referenceDocname))
   }
 }
 
