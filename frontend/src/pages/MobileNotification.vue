@@ -22,10 +22,11 @@
       v-if="notifications.data?.length"
       class="divide-y divide-outline-gray-1 overflow-y-auto text-base"
     >
-      <RouterLink
+      <component
+        :is="n.route_name ? RouterLink : 'div'"
         v-for="n in notifications.data"
-        :key="n.comment"
-        :to="getRoute(n)"
+        :key="n.comment || n.notification_type_doc || n.creation"
+        v-bind="n.route_name ? { to: getRoute(n) } : {}"
         class="flex cursor-pointer items-start gap-3 px-2.5 py-3 hover:bg-surface-gray-2"
         @click="mark_doc_as_read(n.comment || n.notification_type_doc)"
       >
@@ -57,7 +58,7 @@
             {{ __(timeAgo(n.creation)) }}
           </div>
         </div>
-      </RouterLink>
+      </component>
     </div>
     <div v-else class="flex flex-1 flex-col items-center justify-center gap-2">
       <NotificationsIcon class="h-20 w-20 text-ink-gray-2" />
@@ -78,6 +79,7 @@ import { globalStore } from '@/stores/global'
 import { timeAgo, sanitizeHTML } from '@/utils'
 import { Breadcrumbs } from 'frappe-ui'
 import { onMounted, onBeforeUnmount } from 'vue'
+import { RouterLink } from 'vue-router'
 
 const { $socket } = globalStore()
 const { mark_as_read, mark_doc_as_read } = notificationsStore()
@@ -92,18 +94,20 @@ onMounted(() => {
   })
 })
 
+const ROUTE_PARAM_KEYS = {
+  Lead: 'leadId',
+  Deal: 'dealId',
+  Organization: 'organizationId',
+  Contact: 'contactId',
+}
+
 function getRoute(notification) {
-  let params = {
-    leadId: notification.reference_name,
-  }
-  if (notification.route_name === 'Deal') {
-    params = {
-      dealId: notification.reference_name,
-    }
-  }
+  const paramKey = ROUTE_PARAM_KEYS[notification.route_name]
+  if (!paramKey) return null
+
   return {
     name: notification.route_name,
-    params: params,
+    params: { [paramKey]: notification.reference_name },
     hash: '#' + notification.comment || notification.notification_type_doc,
   }
 }

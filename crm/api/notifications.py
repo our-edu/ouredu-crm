@@ -13,8 +13,16 @@ def get_notifications():
 	)
 	notifications = query.run(as_dict=True)
 
+	ROUTE_MAP = {
+		"CRM Deal": ("deal", "Deal"),
+		"CRM Lead": ("lead", "Lead"),
+		"CRM Organization": ("organization", "Organization"),
+		"Contact": ("contact", "Contact"),
+	}
+
 	_notifications = []
 	for notification in notifications:
+		reference_doctype, route_name = ROUTE_MAP.get(notification.reference_doctype, (None, None))
 		_notifications.append(
 			{
 				"creation": notification.creation,
@@ -29,9 +37,9 @@ def get_notifications():
 				"notification_text": notification.notification_text,
 				"notification_type_doctype": notification.notification_type_doctype,
 				"notification_type_doc": notification.notification_type_doc,
-				"reference_doctype": ("deal" if notification.reference_doctype == "CRM Deal" else "lead"),
-				"reference_name": notification.reference_name,
-				"route_name": ("Deal" if notification.reference_doctype == "CRM Deal" else "Lead"),
+				"reference_doctype": reference_doctype,
+				"reference_name": notification.reference_name if route_name else None,
+				"route_name": route_name,
 			}
 		)
 
