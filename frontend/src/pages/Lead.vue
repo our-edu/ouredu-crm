@@ -5,6 +5,15 @@
         <template #prefix="{ item }">
           <Icon v-if="item.icon" :icon="item.icon" class="mr-2 h-4" />
         </template>
+        <template #suffix="{ item }">
+          <NameCellContactsPopover
+            v-if="item.isCurrentLead"
+            doctype="CRM Lead"
+            :docname="props.leadId"
+          >
+            {{ item.displayLabel }}
+          </NameCellContactsPopover>
+        </template>
       </Breadcrumbs>
     </template>
     <template v-if="!errorTitle" #right-header>
@@ -264,9 +273,13 @@
                             :image="contact.image"
                             size="md"
                           />
-                          <div class="truncate">
+                          <NameCellContactsPopover
+                            doctype="Contact"
+                            :docname="contact.name"
+                            flat
+                          >
                             {{ contact.full_name }}
-                          </div>
+                          </NameCellContactsPopover>
                           <Badge
                             v-if="contact.is_primary"
                             class="ml-2"
@@ -407,6 +420,7 @@ import CheckCircleIcon from '@/components/Icons/CheckCircleIcon.vue'
 import DealsIcon from '@/components/Icons/DealsIcon.vue'
 import DealsListView from '@/components/ListViews/DealsListView.vue'
 import EmptyState from '@/components/ListViews/EmptyState.vue'
+import NameCellContactsPopover from '@/components/ListViews/NameCellContactsPopover.vue'
 import LoadingIndicator from '@/components/Icons/LoadingIndicator.vue'
 import ArrowUpRightIcon from '@/components/Icons/ArrowUpRightIcon.vue'
 import SuccessIcon from '@/components/Icons/SuccessIcon.vue'
@@ -552,7 +566,9 @@ const breadcrumbs = computed(() => {
   }
 
   items.push({
-    label: title.value,
+    label: '',
+    displayLabel: title.value,
+    isCurrentLead: true,
     route: { name: 'Lead', params: { leadId: props.leadId } },
   })
   return items

@@ -556,8 +556,14 @@ const changeTabTo = (tabName) => {
 
 const all_activities = createResource({
   url: 'crm.api.activities.get_activities',
-  params: { name: props.docname },
-  cache: ['activity', props.docname],
+  // Explicit doctype, since document names aren't unique across doctypes
+  // (e.g. a Contact with no first/last name falls back to its
+  // company_name as its own name - see Contact.autoname() - and can
+  // collide with the exact name of the CRM Organization it belongs to).
+  // Without it, get_activities falls back to guessing the doctype by name
+  // existence, which picks the wrong document when names collide.
+  params: { name: props.docname, doctype: props.doctype },
+  cache: ['activity', props.doctype, props.docname],
   auto: true,
   transform: ([versions, calls, notes, tasks, attachments]) => {
     return { versions, calls, notes, tasks, attachments }

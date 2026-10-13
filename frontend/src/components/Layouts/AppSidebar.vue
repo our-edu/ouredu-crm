@@ -28,6 +28,23 @@
             />
           </template>
         </SidebarLink>
+        <SidebarLink
+          id="global-search-btn"
+          :label="__('Search')"
+          :icon="LucideSearch"
+          :isCollapsed="isSidebarCollapsed"
+          class="mx-2 my-[1.5px]"
+          @click="() => (showGlobalSearch = true)"
+        >
+          <template #right>
+            <span
+              v-if="!isSidebarCollapsed"
+              class="rounded bg-surface-gray-3 px-1.5 py-0.5 text-xs text-ink-gray-5"
+            >
+              Ctrl K
+            </span>
+          </template>
+        </SidebarLink>
       </div>
       <div v-for="view in allViews" :key="view.label">
         <div class="mx-2 my-1.5" />
@@ -130,6 +147,7 @@
     </div>
     <Notifications />
     <Settings />
+    <GlobalSearch v-model:show="showGlobalSearch" />
     <HelpModal
       v-if="showHelpModal"
       v-model="showHelpModal"
@@ -151,6 +169,7 @@
 <script setup>
 import BrushCleaningIcon from '~icons/lucide/brush-cleaning'
 import LucideLayoutDashboard from '~icons/lucide/layout-dashboard'
+import LucideSearch from '~icons/lucide/search'
 import CRMLogo from '@/components/Icons/CRMLogo.vue'
 import InviteIcon from '@/components/Icons/InviteIcon.vue'
 import ConvertIcon from '@/components/Icons/ConvertIcon.vue'
@@ -174,6 +193,7 @@ import NotificationsIcon from '@/components/Icons/NotificationsIcon.vue'
 import HelpIcon from '@/components/Icons/HelpIcon.vue'
 import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
 import SidebarLink from '@/components/SidebarLink.vue'
+import GlobalSearch from '@/components/GlobalSearch.vue'
 import Notifications from '@/components/Notifications.vue'
 import Settings from '@/components/Settings/Settings.vue'
 import { viewsStore } from '@/stores/views'
@@ -211,6 +231,7 @@ const { clearDemoData, isDemoDataCreated } = useDemoData()
 const { send } = useBroadcast()
 
 const isSidebarCollapsed = useStorage('isSidebarCollapsed', false)
+const showGlobalSearch = ref(false)
 
 const isFCSite = ref(window.is_fc_site)
 const isDemoSite = ref(window.is_demo_site)

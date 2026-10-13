@@ -5,6 +5,15 @@
         <template #prefix="{ item }">
           <Icon v-if="item.icon" :icon="item.icon" class="mr-2 h-4" />
         </template>
+        <template #suffix="{ item }">
+          <NameCellContactsPopover
+            v-if="item.isCurrentOrg"
+            doctype="CRM Organization"
+            :docname="props.organizationId"
+          >
+            {{ item.displayLabel }}
+          </NameCellContactsPopover>
+        </template>
       </Breadcrumbs>
     </template>
     <template #right-header>
@@ -246,6 +255,7 @@ import LayoutHeader from '@/components/LayoutHeader.vue'
 import LeadsListView from '@/components/ListViews/LeadsListView.vue'
 import DealsListView from '@/components/ListViews/DealsListView.vue'
 import ContactsListView from '@/components/ListViews/ContactsListView.vue'
+import NameCellContactsPopover from '@/components/ListViews/NameCellContactsPopover.vue'
 import EmptyState from '@/components/ListViews/EmptyState.vue'
 import WebsiteIcon from '@/components/Icons/WebsiteIcon.vue'
 import CameraIcon from '@/components/Icons/CameraIcon.vue'
@@ -359,7 +369,9 @@ const breadcrumbs = computed(() => {
   }
 
   items.push({
-    label: title.value,
+    label: '',
+    displayLabel: title.value,
+    isCurrentOrg: true,
     route: {
       name: 'Organization',
       params: { organizationId: props.organizationId },
