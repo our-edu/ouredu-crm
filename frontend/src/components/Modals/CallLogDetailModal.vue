@@ -69,9 +69,23 @@
                   :label="field.value.caller.label"
                   size="sm"
                 />
-                <div class="ml-1 flex flex-col gap-1">
+                <component
+                  :is="field.value.caller.contact ? RouterLink : 'div'"
+                  v-bind="
+                    field.value.caller.contact
+                      ? {
+                          to: {
+                            name: 'Contact',
+                            params: { contactId: field.value.caller.contact },
+                          },
+                        }
+                      : {}
+                  "
+                  class="ml-1 flex flex-col gap-1"
+                  :class="field.value.caller.contact ? 'hover:underline' : ''"
+                >
                   {{ field.value.caller.label }}
-                </div>
+                </component>
                 <FeatherIcon
                   name="arrow-right"
                   class="mx-1 h-4 w-4 text-ink-gray-5"
@@ -81,9 +95,23 @@
                   :label="field.value.receiver.label"
                   size="sm"
                 />
-                <div class="ml-1 flex flex-col gap-1">
+                <component
+                  :is="field.value.receiver.contact ? RouterLink : 'div'"
+                  v-bind="
+                    field.value.receiver.contact
+                      ? {
+                          to: {
+                            name: 'Contact',
+                            params: { contactId: field.value.receiver.contact },
+                          },
+                        }
+                      : {}
+                  "
+                  class="ml-1 flex flex-col gap-1"
+                  :class="field.value.receiver.contact ? 'hover:underline' : ''"
+                >
                   {{ field.value.receiver.label }}
-                </div>
+                </component>
               </div>
               <Tooltip v-else-if="field.tooltip" :text="field.tooltip">
                 {{ field.value }}
@@ -204,7 +232,7 @@ import { useDocument } from '@/data/document'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
 import { FeatherIcon, Dropdown, Avatar, Tooltip, call, toast } from 'frappe-ui'
 import { ref, computed, h, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, RouterLink } from 'vue-router'
 
 const router = useRouter()
 
@@ -279,10 +307,20 @@ const detailFields = computed(() => {
   if (!callLog.value?.data) return []
 
   let data = JSON.parse(JSON.stringify(callLog.value?.data))
+  let callType = data.type
+  let clientNumber = callType == 'Outgoing' ? data.to : data.from
 
   for (const key in data) {
     data[key] = getCallLogDetail(key, data)
   }
+
+  function withClientNumber(side) {
+    if (side?.label == 'Unknown' && clientNumber) {
+      return { ...side, label: `${side.label} (${clientNumber})` }
+    }
+    return side
+  }
+
   let details = [
     {
       icon: h(FeatherIcon, {
@@ -296,8 +334,18 @@ const detailFields = computed(() => {
       icon: ContactsIcon,
       name: 'receiver',
       value: {
-        receiver: data.receiver,
-        caller: data.caller,
+        receiver:
+          callType == 'Incoming'
+            ? data.receiver
+            : data.custom_contact
+              ? { label: data.custom_contact, image: null, contact: data.custom_contact }
+              : withClientNumber(data.receiver),
+        caller:
+          callType == 'Outgoing'
+            ? data.caller
+            : data.custom_contact
+              ? { label: data.custom_contact, image: null, contact: data.custom_contact }
+              : withClientNumber(data.caller),
       },
     },
     {
