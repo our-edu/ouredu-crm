@@ -26,14 +26,24 @@
             class="flex items-center justify-between gap-2 rounded px-2 py-2 text-sm text-ink-gray-6 hover:bg-surface-gray-2"
           >
             <span class="truncate">{{ phone }}</span>
-            <button
-              type="button"
-              class="shrink-0 text-ink-gray-5 hover:text-ink-gray-8"
-              :title="__('Copy to clipboard')"
-              @click.stop="copyToClipboard(phone)"
-            >
-              <FeatherIcon name="copy" class="h-3.5 w-3.5" />
-            </button>
+            <div class="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                class="text-ink-gray-5 hover:text-ink-gray-8"
+                :title="__('Log a call')"
+                @click.stop="openCallLog(phone)"
+              >
+                <FeatherIcon name="phone" class="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                class="text-ink-gray-5 hover:text-ink-gray-8"
+                :title="__('Copy to clipboard')"
+                @click.stop="copyToClipboard(phone)"
+              >
+                <FeatherIcon name="copy" class="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
         </template>
         <template v-else>
@@ -65,14 +75,24 @@
                 class="flex items-center justify-between gap-2 text-sm text-ink-gray-6"
               >
                 <span class="truncate">{{ phone }}</span>
-                <button
-                  type="button"
-                  class="shrink-0 text-ink-gray-5 hover:text-ink-gray-8"
-                  :title="__('Copy to clipboard')"
-                  @click.stop="copyToClipboard(phone)"
-                >
-                  <FeatherIcon name="copy" class="h-3.5 w-3.5" />
-                </button>
+                <div class="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    class="text-ink-gray-5 hover:text-ink-gray-8"
+                    :title="__('Log a call')"
+                    @click.stop="openCallLog(phone)"
+                  >
+                    <FeatherIcon name="phone" class="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    class="text-ink-gray-5 hover:text-ink-gray-8"
+                    :title="__('Copy to clipboard')"
+                    @click.stop="copyToClipboard(phone)"
+                  >
+                    <FeatherIcon name="copy" class="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -86,12 +106,27 @@
 import { ref, computed } from 'vue'
 import { Popover, Avatar, FeatherIcon, call } from 'frappe-ui'
 import { copyToClipboard } from '@/utils'
+import { useDoctypeModal } from '@/composables/doctypeModal'
 
 const props = defineProps({
   doctype: { type: String, required: true },
   docname: { type: String, required: true },
   flat: { type: Boolean, default: false },
 })
+
+const { showModal } = useDoctypeModal()
+
+function openCallLog(phone) {
+  showModal({
+    doctype: 'CRM Call Log',
+    title: 'Call Log',
+    defaults: {
+      type: 'Outgoing',
+      to: phone,
+      status: 'Completed',
+    },
+  })
+}
 
 const phones = computed(() => contacts.value[0]?.phones || [])
 
