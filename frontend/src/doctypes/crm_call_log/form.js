@@ -14,12 +14,11 @@ export class CRMCallLog {
 
     this.setAgentFields()
 
-    // "from" stays a plain, always-editable text field - only the default
-    // value is picked for the user; multiple numbers still just prefill the
-    // first one, which the user can overwrite manually.
-    if (!this.doc.from && this._myNumbers.length) {
-      this.doc.from = this._myNumbers[0]
-    }
+    // The Quick Entry form reuses a cached, unsaved document across separate
+    // "new document" openings (it only resets on a successful create), so
+    // always overwrite "from" fresh here instead of only filling it when
+    // empty - otherwise a previous call's number lingers into the next one.
+    this.doc.from = this._myNumbers[0] || ''
   }
 
   type() {

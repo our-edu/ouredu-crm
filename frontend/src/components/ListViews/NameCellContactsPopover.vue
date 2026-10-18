@@ -124,6 +124,11 @@ function openCallLog(phone) {
       type: 'Outgoing',
       to: phone,
       status: 'Completed',
+      from: '',
+      caller: '',
+      receiver: '',
+      duration: '',
+      note: '',
     },
   })
 }
