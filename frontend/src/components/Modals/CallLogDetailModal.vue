@@ -84,7 +84,13 @@
                   class="ml-1 flex flex-col gap-1"
                   :class="field.value.caller.contact ? 'hover:underline' : ''"
                 >
-                  {{ field.value.caller.label }}
+                  <Tooltip
+                    v-if="field.value.caller.tooltip"
+                    :text="field.value.caller.tooltip"
+                  >
+                    <span>{{ field.value.caller.label }}</span>
+                  </Tooltip>
+                  <template v-else>{{ field.value.caller.label }}</template>
                 </component>
                 <FeatherIcon
                   name="arrow-right"
@@ -110,7 +116,13 @@
                   class="ml-1 flex flex-col gap-1"
                   :class="field.value.receiver.contact ? 'hover:underline' : ''"
                 >
-                  {{ field.value.receiver.label }}
+                  <Tooltip
+                    v-if="field.value.receiver.tooltip"
+                    :text="field.value.receiver.tooltip"
+                  >
+                    <span>{{ field.value.receiver.label }}</span>
+                  </Tooltip>
+                  <template v-else>{{ field.value.receiver.label }}</template>
                 </component>
               </div>
               <Tooltip v-else-if="field.tooltip" :text="field.tooltip">
@@ -338,13 +350,23 @@ const detailFields = computed(() => {
           callType == 'Incoming'
             ? data.receiver
             : data.custom_contact
-              ? { label: data.custom_contact, image: null, contact: data.custom_contact }
+              ? {
+                  label: clientNumber,
+                  tooltip: data.custom_contact,
+                  image: null,
+                  contact: data.custom_contact,
+                }
               : withClientNumber(data.receiver),
         caller:
           callType == 'Outgoing'
             ? data.caller
             : data.custom_contact
-              ? { label: data.custom_contact, image: null, contact: data.custom_contact }
+              ? {
+                  label: clientNumber,
+                  tooltip: data.custom_contact,
+                  image: null,
+                  contact: data.custom_contact,
+                }
               : withClientNumber(data.caller),
       },
     },
