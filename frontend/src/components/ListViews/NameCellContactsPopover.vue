@@ -127,7 +127,7 @@ function openCallLog(phone) {
       from: '',
       caller: '',
       receiver: '',
-      duration: '',
+      duration: 0,
       note: '',
     },
   })
