@@ -30,6 +30,14 @@ export class CRMCallLog {
     this.setAgentFields()
   }
 
+  onBeforeCreate() {
+    // Duration isn't mandatory, but the field is numeric (seconds) and
+    // Frappe rejects an empty string for it - default a blank value to 0.
+    if (!this.doc.duration) {
+      this.doc.duration = 0
+    }
+  }
+
   setAgentFields() {
     if (!this._myEmail) return
     // caller/receiver are Link(User) fields - only the agent's side has a
