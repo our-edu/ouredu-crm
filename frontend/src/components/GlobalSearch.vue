@@ -100,21 +100,36 @@ const groups = computed(() => {
   })).filter((group) => group.items.length)
 })
 
+// Tracks the most recently *sent* search request. If several requests end up
+// in flight at once (e.g. a pause mid-typing fires an earlier, broader
+// search before the user finishes), responses can arrive out of order - an
+// older, slower request can resolve after a newer one. Only the response
+// matching the latest sent request is ever applied; anything else is
+// dropped, regardless of when it arrives.
+let latestRequestId = 0
+
 const runSearch = useDebounceFn(async (query) => {
   if (!query || !query.trim()) {
+    latestRequestId += 1
     results.value = { contacts: [], organizations: [], leads: [], deals: [] }
     isSearching.value = false
     return
   }
+
+  const requestId = ++latestRequestId
   try {
-    results.value = await call(
+    const response = await call(
       'ouredu_fcrm_customizations.api.global_search.search',
       { query },
     )
+    if (requestId !== latestRequestId) return
+    results.value = response
   } finally {
-    isSearching.value = false
+    if (requestId === latestRequestId) {
+      isSearching.value = false
+    }
   }
-}, 300)
+}, 500)
 
 watch(searchQuery, (query) => {
   if (query && query.trim()) {
