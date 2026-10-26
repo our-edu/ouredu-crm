@@ -131,30 +131,6 @@
         </div>
         <div class="flex items-start">
           <div class="text-base text-ink-gray-7 mt-1.5 w-3/12">
-            {{ __('Visibility') }}
-          </div>
-          <div class="w-9/12">
-            <FormControl
-              v-model="_event.eventType"
-              class="w-full"
-              type="select"
-              :options="[
-                {
-                  label: __('Private'),
-                  value: 'Private',
-                },
-                {
-                  label: __('Public'),
-                  value: 'Public',
-                },
-              ]"
-              variant="outline"
-              :placeholder="__('Private or Public')"
-            />
-          </div>
-        </div>
-        <div class="flex items-start">
-          <div class="text-base text-ink-gray-7 mt-1.5 w-3/12">
             {{ __('Event Category') }}
           </div>
           <div class="w-9/12">
