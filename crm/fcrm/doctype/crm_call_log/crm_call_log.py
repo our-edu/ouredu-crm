@@ -41,6 +41,7 @@ class CRMCallLog(Document):
 			"No Answer",
 			"Queued",
 			"Canceled",
+			"Wrong Number",
 		]
 		telephony_medium: DF.Literal["", "Manual", "Twilio", "Exotel"]
 		to: DF.Data
