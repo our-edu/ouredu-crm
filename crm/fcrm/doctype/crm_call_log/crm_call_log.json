@@ -50,7 +50,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Initiated\nRinging\nIn Progress\nCompleted\nFailed\nBusy\nNo Answer\nQueued\nCanceled",
+   "options": "Initiated\nRinging\nIn Progress\nCompleted\nFailed\nBusy\nNo Answer\nQueued\nCanceled\nWrong Number",
    "reqd": 1
   },
   {
@@ -159,7 +159,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-04 15:08:11.626910",
+ "modified": "2026-10-26 14:33:59.537981",
  "modified_by": "Administrator",
  "module": "FCRM",
  "name": "CRM Call Log",
