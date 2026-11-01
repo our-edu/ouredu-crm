@@ -25,6 +25,7 @@ def get_notifications():
 		reference_doctype, route_name = ROUTE_MAP.get(notification.reference_doctype, (None, None))
 		_notifications.append(
 			{
+				"name": notification.name,
 				"creation": notification.creation,
 				"from_user": {
 					"name": notification.from_user,

@@ -1,4 +1,3 @@
-<!-- eslint-disable vue/no-v-html -->
 <template>
   <div
     v-if="visible"
@@ -39,8 +38,8 @@
           <component
             :is="n.route_name ? RouterLink : 'div'"
             v-for="n in notifications.data"
-            :key="n.comment || n.notification_type_doc || n.creation"
-            v-bind="n.route_name ? { to: getRoute(n) } : {}"
+            :key="n.name"
+            v-bind="n.route_name ? { to: getNotificationRoute(n) } : {}"
             class="flex cursor-pointer items-start gap-2.5 px-4 py-2.5 hover:bg-surface-gray-2"
             @click="markAsRead(n.comment || n.notification_type_doc)"
           >
@@ -52,26 +51,7 @@
               <WhatsAppIcon v-if="n.type == 'WhatsApp'" class="size-7" />
               <UserAvatar v-else :user="n.from_user.name" size="lg" />
             </div>
-            <div>
-              <div
-                v-if="n.notification_text"
-                v-html="sanitizeHTML(n.notification_text)"
-              />
-              <div v-else class="mb-2 space-x-1 leading-5 text-ink-gray-5">
-                <span class="font-medium text-ink-gray-9">
-                  {{ n.from_user.full_name }}
-                </span>
-                <span>
-                  {{ __('mentioned you in {0}', [n.reference_doctype]) }}
-                </span>
-                <span class="font-medium text-ink-gray-9">
-                  {{ n.reference_name }}
-                </span>
-              </div>
-              <div class="text-sm text-ink-gray-5">
-                {{ __(timeAgo(n.creation)) }}
-              </div>
-            </div>
+            <NotificationContent :notification="n" />
           </component>
         </div>
         <EmptyState
@@ -96,14 +76,15 @@ import NotificationsIcon from '@/components/Icons/NotificationsIcon.vue'
 import EventNotificationsArea from '@/components/EventNotificationsArea.vue'
 import EmptyState from '@/components/ListViews/EmptyState.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
+import NotificationContent from '@/components/NotificationContent.vue'
 import {
   visible,
   notifications,
   notificationsStore,
+  getNotificationRoute,
 } from '@/stores/notifications'
 import { useEventNotificationAlert } from '@/data/notifications'
 import { globalStore } from '@/stores/global'
-import { timeAgo, sanitizeHTML } from '@/utils'
 import { onClickOutside } from '@vueuse/core'
 import { useTelemetry } from 'frappe-ui/frappe'
 import { TabButtons } from 'frappe-ui'
@@ -152,22 +133,4 @@ onMounted(() => {
   $socket.on('crm_notification', () => notifications.reload())
   $socket.on('event_notification', (data) => handleEventNotification(data))
 })
-
-const ROUTE_PARAM_KEYS = {
-  Lead: 'leadId',
-  Deal: 'dealId',
-  Organization: 'organizationId',
-  Contact: 'contactId',
-}
-
-function getRoute(notification) {
-  const paramKey = ROUTE_PARAM_KEYS[notification.route_name]
-  if (!paramKey) return null
-
-  return {
-    name: notification.route_name,
-    params: { [paramKey]: notification.reference_name },
-    hash: notification.hash,
-  }
-}
 </script>

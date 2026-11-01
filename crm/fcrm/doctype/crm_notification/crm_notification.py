@@ -29,7 +29,8 @@ class CRMNotification(Document):
 
 	def on_update(self):
 		if self.to_user:
-			frappe.publish_realtime("crm_notification", user=self.to_user)
+			# After commit, so the client reload sees this notification
+			frappe.publish_realtime("crm_notification", user=self.to_user, after_commit=True)
 
 
 def notify_user(notification):

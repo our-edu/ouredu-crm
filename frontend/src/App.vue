@@ -6,13 +6,12 @@
     </Layout>
     <Dialogs />
     <DoctypeModals />
-    <EventNotificationPopup />
+    <NotificationPopups v-if="session.isLoggedIn" />
   </FrappeUIProvider>
 </template>
 
 <script setup>
 import NotPermitted from '@/pages/NotPermitted.vue'
-import EventNotificationPopup from '@/components/EventNotificationPopup.vue'
 import DoctypeModals from '@/components/Modals/DoctypeModals.vue'
 import { Dialogs } from '@/utils/dialogs'
 import { sessionStore } from '@/stores/session'
@@ -27,6 +26,11 @@ if (!localStorage.getItem('theme')) {
   setTheme('light')
 }
 
+// Async so the notifications store is created after main.js sets the
+// resourceFetcher; its auto fetch would otherwise use the wrong fetcher.
+const NotificationPopups = defineAsyncComponent(
+  () => import('./components/NotificationPopups.vue'),
+)
 const MobileLayout = defineAsyncComponent(
   () => import('./components/Layouts/MobileLayout.vue'),
 )
