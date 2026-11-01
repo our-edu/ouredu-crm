@@ -148,13 +148,9 @@
                 :iconLeft="AttachmentIcon"
                 @click="showFilesUploader = true"
               />
-              <Button
-                v-if="linkedLead"
-                :label="__('Go to Lead')"
-                size="sm"
-                iconLeft="arrow-right"
-                @click="router.push({ name: 'Lead', params: { leadId: linkedLead } })"
-              />
+              <GoToMenu :groups="goToGroups">
+                <Button :label="__('Go to')" size="sm" iconLeft="arrow-right" />
+              </GoToMenu>
               <Button
                 v-if="canDelete"
                 :label="__('Delete')"
@@ -215,6 +211,7 @@ import LayoutHeader from '@/components/LayoutHeader.vue'
 import DealsListView from '@/components/ListViews/DealsListView.vue'
 import EmptyState from '@/components/ListViews/EmptyState.vue'
 import NameCellContactsPopover from '@/components/ListViews/NameCellContactsPopover.vue'
+import GoToMenu from '@/components/GoToMenu.vue'
 import CustomActions from '@/components/CustomActions.vue'
 import DeleteLinkedDocModal from '@/components/DeleteLinkedDocModal.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
@@ -232,6 +229,7 @@ import TaskIcon from '@/components/Icons/TaskIcon.vue'
 import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
 import { whatsappEnabled } from '@/composables/whatsapp'
 import { useActiveTabManager } from '@/composables/useActiveTabManager'
+import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
 import {
   formatDate,
   timeAgo,
@@ -285,7 +283,7 @@ const reload = ref(false)
 const activities = ref(null)
 const showFilesUploader = ref(false)
 const showDeleteLinkedDocModal = ref(false)
-const linkedLead = ref(null)
+const linkedDocs = ref({ organization: null, leads: [], deals: [] })
 
 const {
   document: contact,
@@ -299,7 +297,7 @@ const canDelete = computed(() => permissions.data?.permissions?.delete || false)
 onMounted(async () => {
   if (contact.doc) {
     await triggerOnRender()
-    await fetchLinkedLead()
+    await fetchLinkedDocs()
   }
 })
 
@@ -605,17 +603,76 @@ async function deleteOption(doctype, name) {
   toast.success(__('Contact Updated'))
 }
 
-async function fetchLinkedLead() {
+async function fetchLinkedDocs() {
   if (!contact.doc) return
   try {
-    const result = await call('crm.api.contact.get_linked_lead', {
-      contact: props.contactId,
-    })
-    linkedLead.value = result || null
+    linkedDocs.value = await call(
+      'ouredu_fcrm_customizations.api.contact.get_linked_docs',
+      { contact: props.contactId },
+    )
   } catch {
-    linkedLead.value = null
+    linkedDocs.value = { organization: null, leads: [], deals: [] }
   }
 }
+
+const goToGroups = computed(() => {
+  let organization = linkedDocs.value.organization
+  return [
+    {
+      label: __('Org'),
+      links: organization
+        ? [
+            {
+              label: organization.organization_name || organization.name,
+              route: {
+                name: 'Organization',
+                params: { organizationId: organization.name },
+              },
+            },
+          ]
+        : [],
+    },
+    {
+      label: __('Lead'),
+      links: (linkedDocs.value.leads || []).map((lead) => ({
+        label: lead.lead_name || lead.name,
+        route: { name: 'Lead', params: { leadId: lead.name } },
+      })),
+    },
+    {
+      label: __('Deal'),
+      links: (linkedDocs.value.deals || []).map((deal) => ({
+        label: deal.organization || deal.name,
+        route: { name: 'Deal', params: { dealId: deal.name } },
+      })),
+    },
+  ]
+})
+
+function goToOrganization() {
+  let organization = linkedDocs.value.organization
+  if (!organization) {
+    toast.error(__('No Organization found'))
+    return
+  }
+  router.push({
+    name: 'Organization',
+    params: { organizationId: organization.name },
+  })
+}
+
+useKeyboardShortcuts({
+  shortcuts: [
+    {
+      match: (e) =>
+        (e.metaKey || e.ctrlKey) &&
+        !e.shiftKey &&
+        !e.altKey &&
+        e.key.toLowerCase() === 'o',
+      action: goToOrganization,
+    },
+  ],
+})
 
 async function deleteContact() {
   showDeleteLinkedDocModal.value = true
@@ -688,7 +745,7 @@ function showAddressModal(_address) {
 watch(
   () => contact.doc,
   async (doc) => {
-    if (doc) await fetchLinkedLead()
+    if (doc) await fetchLinkedDocs()
   },
   { once: true },
 )
