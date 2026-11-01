@@ -10,6 +10,24 @@ export const notifications = createResource({
   auto: true,
 })
 
+const ROUTE_PARAM_KEYS = {
+  Lead: 'leadId',
+  Deal: 'dealId',
+  Organization: 'organizationId',
+  Contact: 'contactId',
+}
+
+export function getNotificationRoute(notification) {
+  const paramKey = ROUTE_PARAM_KEYS[notification.route_name]
+  if (!paramKey) return null
+
+  return {
+    name: notification.route_name,
+    params: { [paramKey]: notification.reference_name },
+    hash: notification.hash,
+  }
+}
+
 export const unreadNotificationsCount = computed(
   () => notifications.data?.filter((n) => !n.read).length || 0,
 )

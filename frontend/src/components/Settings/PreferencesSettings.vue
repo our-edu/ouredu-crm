@@ -77,6 +77,7 @@
             :options="getTimezoneOptions()"
           />
         </div>
+        <NotificationPreferences />
       </div>
     </template>
   </SettingsLayoutBase>
@@ -85,6 +86,7 @@
 <script setup>
 import CRMLogo from '@/components/Icons/CRMLogo.vue'
 import ThemeSwitcher from '@/components/Settings/ThemeSwitcher.vue'
+import NotificationPreferences from '@/components/Settings/NotificationPreferences.vue'
 import SettingsLayoutBase from '@/components/Layouts/SettingsLayoutBase.vue'
 import Link from '@/components/Controls/Link.vue'
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
