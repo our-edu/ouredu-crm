@@ -184,6 +184,10 @@
                   @click="showFilesUploader = true"
                 />
 
+                <GoToMenu :groups="goToGroups">
+                  <Button :tooltip="__('Go to')" icon="arrow-right" />
+                </GoToMenu>
+
                 <Button
                   v-if="canDelete"
                   :tooltip="__('Delete')"
@@ -421,6 +425,7 @@ import DealsIcon from '@/components/Icons/DealsIcon.vue'
 import DealsListView from '@/components/ListViews/DealsListView.vue'
 import EmptyState from '@/components/ListViews/EmptyState.vue'
 import NameCellContactsPopover from '@/components/ListViews/NameCellContactsPopover.vue'
+import GoToMenu from '@/components/GoToMenu.vue'
 import LoadingIndicator from '@/components/Icons/LoadingIndicator.vue'
 import ArrowUpRightIcon from '@/components/Icons/ArrowUpRightIcon.vue'
 import SuccessIcon from '@/components/Icons/SuccessIcon.vue'
@@ -470,6 +475,7 @@ import {
 import { ref, computed, h, watch, nextTick, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useActiveTabManager } from '@/composables/useActiveTabManager'
+import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
 
 const { brand } = getSettings()
 const { $dialog, $socket, makeCall } = globalStore()
@@ -717,6 +723,56 @@ const dealRows = computed(() =>
     },
   })),
 )
+
+const goToGroups = computed(() => [
+  {
+    label: __('Org'),
+    links: doc.value.custom_org
+      ? [
+          {
+            label:
+              getOrganization(doc.value.custom_org)?.organization_name ||
+              doc.value.custom_org,
+            route: {
+              name: 'Organization',
+              params: { organizationId: doc.value.custom_org },
+            },
+          },
+        ]
+      : [],
+  },
+  {
+    label: __('Deal'),
+    links: (deals.data || []).map((deal) => ({
+      label: deal.organization || deal.name,
+      route: { name: 'Deal', params: { dealId: deal.name } },
+    })),
+  },
+])
+
+function goToOrganization() {
+  if (!doc.value.custom_org) {
+    toast.error(__('No Organization found'))
+    return
+  }
+  router.push({
+    name: 'Organization',
+    params: { organizationId: doc.value.custom_org },
+  })
+}
+
+useKeyboardShortcuts({
+  shortcuts: [
+    {
+      match: (e) =>
+        (e.metaKey || e.ctrlKey) &&
+        !e.shiftKey &&
+        !e.altKey &&
+        e.key.toLowerCase() === 'o',
+      action: goToOrganization,
+    },
+  ],
+})
 
 const dealColumns = [
   { label: __('Organization'), key: 'organization', width: '11rem' },

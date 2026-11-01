@@ -131,6 +131,10 @@
               @click="showFilesUploader = true"
             />
 
+            <GoToMenu :groups="goToGroups">
+              <Button :tooltip="__('Go to')" icon="arrow-right" />
+            </GoToMenu>
+
             <Button
               v-if="canDelete"
               :tooltip="__('Delete')"
@@ -358,6 +362,7 @@ import DeleteLinkedDocModal from '@/components/DeleteLinkedDocModal.vue'
 import ErrorPage from '@/components/ErrorPage.vue'
 import Icon from '@/components/Icon.vue'
 import NameCellContactsPopover from '@/components/ListViews/NameCellContactsPopover.vue'
+import GoToMenu from '@/components/GoToMenu.vue'
 import Resizer from '@/components/Resizer.vue'
 import LoadingIndicator from '@/components/Icons/LoadingIndicator.vue'
 import ActivityIcon from '@/components/Icons/ActivityIcon.vue'
@@ -426,6 +431,7 @@ import {
 } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useActiveTabManager } from '@/composables/useActiveTabManager'
+import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
 
 const { on } = useBroadcast()
 const { brand } = getSettings()
@@ -514,6 +520,58 @@ watch(
 )
 
 const organization = computed(() => organizationDocument.value?.doc || {})
+
+const goToGroups = computed(() => [
+  {
+    label: __('Lead'),
+    links: doc.value.lead
+      ? [
+          {
+            label: doc.value.lead,
+            route: { name: 'Lead', params: { leadId: doc.value.lead } },
+          },
+        ]
+      : [],
+  },
+  {
+    label: __('Org'),
+    links: doc.value.organization
+      ? [
+          {
+            label: organization.value.organization_name || doc.value.organization,
+            route: {
+              name: 'Organization',
+              params: { organizationId: doc.value.organization },
+            },
+          },
+        ]
+      : [],
+  },
+])
+
+function goToOrganization() {
+  if (!doc.value.organization) {
+    toast.error(__('No Organization found'))
+    return
+  }
+  router.push({
+    name: 'Organization',
+    params: { organizationId: doc.value.organization },
+  })
+}
+
+useKeyboardShortcuts({
+  shortcuts: [
+    {
+      match: (e) =>
+        (e.metaKey || e.ctrlKey) &&
+        !e.shiftKey &&
+        !e.altKey &&
+        e.key.toLowerCase() === 'o',
+      action: goToOrganization,
+    },
+  ],
+})
 
 onMounted(async () => {
   $socket.on('crm_customer_created', () => {
