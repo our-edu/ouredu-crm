@@ -12,7 +12,8 @@ import EventModal from '@/components/Modals/EventModal.vue'
 import { showEventModal, activeEvent } from '@/composables/event'
 import { useDoctypeModal } from '@/composables/doctypeModal'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
-import { call } from 'frappe-ui'
+import { usersStore } from '@/stores/users'
+import { call, dayjs } from 'frappe-ui'
 import { useRoute, useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -23,6 +24,7 @@ const props = defineProps({
 const activities = defineModel({ type: Object })
 
 const { showModal } = useDoctypeModal()
+const { getUser } = usersStore()
 const { updateOnboardingStep } = useOnboarding('frappecrm')
 const { capture } = useTelemetry()
 
@@ -41,12 +43,25 @@ function showTask(task) {
     defaults: {
       reference_doctype: props.doctype,
       reference_docname: props.doc?.name,
+      ...(task?.name ? {} : newTaskDefaults()),
     },
     callbacks: {
       afterInsert: (d) => afterDoctype(d, true),
       afterUpdate: afterDoctype,
     },
   })
+}
+
+// Only for new tasks: DoctypeModal merges defaults over the loaded doc,
+// so passing them on edit would overwrite the saved values.
+function newTaskDefaults() {
+  if (props.doctype !== 'CRM Organization') return {}
+  return {
+    start_date: dayjs().format('YYYY-MM-DD'),
+    due_date: dayjs().add(1, 'day').format('YYYY-MM-DD HH:mm:ss'),
+    assigned_to: getUser().name,
+    status: 'Todo',
+  }
 }
 
 async function deleteTask(name) {
