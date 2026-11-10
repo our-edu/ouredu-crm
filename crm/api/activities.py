@@ -511,55 +511,13 @@ def get_organization_activities(name: str):
 
 	for version in docinfo.versions:
 		data = json.loads(version.data)
-		if not data.get("changed"):
-			continue
-
-		if change := data.get("changed")[0]:
-			field = org_fields.get(change[0], None)
-
-			if not field or change[0] in avoid_fields or (not change[1] and not change[2]):
+		# One activity per changed field, so a save that touches several
+		# fields (e.g. Sales Agent + its fetched name) shows all of them.
+		for change in data.get("changed") or []:
+			if change[0] in avoid_fields:
 				continue
-
-			field_label = field.get("label") or change[0]
-			field_option = field.get("options") or None
-
-			activity_type = "changed"
-			data = {
-				"field": change[0],
-				"field_label": field_label,
-				"old_value": change[1],
-				"value": change[2],
-			}
-
-			if not change[1] and change[2]:
-				activity_type = "added"
-				data = {
-					"field": change[0],
-					"field_label": field_label,
-					"value": change[2],
-				}
-			elif change[1] and not change[2]:
-				activity_type = "removed"
-				data = {
-					"field": change[0],
-					"field_label": field_label,
-					"value": change[1],
-				}
-
-			if data.get("value") and field_option and is_translatable(field_option):
-				data["value"] = _(data["value"])
-				if data.get("old_value"):
-					data["old_value"] = _(data["old_value"])
-
-		activity = {
-			"activity_type": activity_type,
-			"creation": version.creation,
-			"owner": version.owner,
-			"data": data,
-			"is_lead": False,
-			"options": field_option,
-		}
-		activities.append(activity)
+			if activity := parse_field_change(change, org_fields, version):
+				activities.append(activity)
 
 	for comment in docinfo.comments:
 		activity = {
@@ -615,6 +573,41 @@ def get_organization_activities(name: str):
 	activities = handle_multiple_versions(activities)
 
 	return activities, calls, notes, tasks, attachments
+
+
+def parse_field_change(change: list, fields: dict, version) -> dict | None:
+	"""Build a changed/added/removed activity from one Version `changed` entry."""
+	fieldname, old_value, value = change[0], change[1], change[2]
+	field = fields.get(fieldname)
+	if not field or (not old_value and not value):
+		return None
+
+	field_option = field.get("options") or None
+	data = {"field": fieldname, "field_label": field.get("label") or fieldname}
+	if not old_value:
+		activity_type = "added"
+		data["value"] = value
+	elif not value:
+		activity_type = "removed"
+		data["value"] = old_value
+	else:
+		activity_type = "changed"
+		data["old_value"] = old_value
+		data["value"] = value
+
+	if field_option and is_translatable(field_option):
+		data["value"] = _(data["value"])
+		if data.get("old_value"):
+			data["old_value"] = _(data["old_value"])
+
+	return {
+		"activity_type": activity_type,
+		"creation": version.creation,
+		"owner": version.owner,
+		"data": data,
+		"is_lead": False,
+		"options": field_option,
+	}
 
 
 def get_attachments(doctype: str, name: str):

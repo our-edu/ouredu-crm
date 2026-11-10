@@ -35,8 +35,11 @@
           </div>
         </div>
         <div>
+          <!-- Wait for the doc in edit mode: Field.vue binds to the doc cache
+               by data.name at setup, so rendering early binds it to the
+               new-doc cache and @change edits (User, Date, Link) are lost. -->
           <FieldLayout
-            v-if="layout.data"
+            v-if="layout.data && (!docname || document.doc?.name)"
             :tabs="layout.data"
             :data="doc"
             :doctype="doctype"
