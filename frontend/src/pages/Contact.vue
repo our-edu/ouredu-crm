@@ -227,7 +227,7 @@ import DetailsIcon from '@/components/Icons/DetailsIcon.vue'
 import NoteIcon from '@/components/Icons/NoteIcon.vue'
 import TaskIcon from '@/components/Icons/TaskIcon.vue'
 import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
-import { whatsappEnabled } from '@/composables/whatsapp'
+import { canUseWhatsApp } from '@/composables/whatsapp'
 import { useActiveTabManager } from '@/composables/useActiveTabManager'
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
 import {
@@ -391,7 +391,7 @@ const tabs = computed(() => {
       name: 'WhatsApp',
       label: __('WhatsApp'),
       icon: WhatsAppIcon,
-      condition: () => whatsappEnabled.value,
+      condition: () => canUseWhatsApp.value,
     },
     {
       name: 'Deals',

@@ -205,7 +205,7 @@ import { usersStore } from '@/stores/users'
 import { sessionStore } from '@/stores/session'
 import { showSettings, activeSettingsPage } from '@/composables/settings'
 import { showChangePasswordModal } from '@/composables/modals'
-import { whatsappEnabled } from '@/composables/whatsapp'
+import { canUseWhatsApp } from '@/composables/whatsapp'
 import { useBroadcast } from '@/composables/useBroadcast.js'
 import { FeatherIcon, call } from 'frappe-ui'
 import {
@@ -266,7 +266,7 @@ const links = [
     label: 'WA Leads',
     icon: WhatsAppIcon,
     to: 'WA Leads',
-    condition: () => whatsappEnabled.value,
+    condition: () => canUseWhatsApp.value,
   },
   {
     label: 'Notes',

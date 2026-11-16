@@ -277,7 +277,7 @@ import CustomActions from '@/components/CustomActions.vue'
 import ContactModal from '@/components/Modals/ContactModal.vue'
 import DealModal from '@/components/Modals/DealModal.vue'
 import LeadModal from '@/components/Modals/LeadModal.vue'
-import { whatsappEnabled } from '@/composables/whatsapp'
+import { canUseWhatsApp } from '@/composables/whatsapp'
 import { useActiveTabManager } from '@/composables/useActiveTabManager'
 import { useDocument } from '@/data/document'
 import { getSettings } from '@/stores/settings'
@@ -406,7 +406,7 @@ const tabs = computed(() => {
       name: 'WhatsApp',
       label: __('WhatsApp'),
       icon: WhatsAppIcon,
-      condition: () => whatsappEnabled.value,
+      condition: () => canUseWhatsApp.value,
     },
     {
       name: 'Contacts',

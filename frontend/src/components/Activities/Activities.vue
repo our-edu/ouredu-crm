@@ -432,7 +432,7 @@
     />
   </div>
   <WhatsappTemplateSelectorModal
-    v-if="whatsappEnabled"
+    v-if="canUseWhatsApp"
     v-model="showWhatsappTemplates"
     :doctype="doctype"
     @send="(t) => sendTemplate(t)"
@@ -497,7 +497,7 @@ import EvaluationTab from '@/components/Activities/EvaluationTab.vue'
 import { timeAgo, formatDate, startCase } from '@/utils'
 import { globalStore } from '@/stores/global'
 import { usersStore } from '@/stores/users'
-import { whatsappEnabled } from '@/composables/whatsapp'
+import { canUseWhatsApp } from '@/composables/whatsapp'
 import { useDocument } from '@/data/document'
 import { useTelemetry } from 'frappe-ui/frappe'
 import {
@@ -586,7 +586,7 @@ const whatsappMessages = createResource({
 })
 
 watch(
-  whatsappEnabled,
+  canUseWhatsApp,
   (enabled) => {
     if (enabled) whatsappMessages.fetch()
   },

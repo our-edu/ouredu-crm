@@ -457,7 +457,7 @@ import { organizationsStore } from '@/stores/organizations.js'
 import { statusesStore } from '@/stores/statuses'
 import { getMeta } from '@/stores/meta'
 import { useDocument } from '@/data/document'
-import { whatsappEnabled } from '@/composables/whatsapp'
+import { canUseWhatsApp } from '@/composables/whatsapp'
 import { callEnabled } from '@/composables/telephony'
 import {
   createResource,
@@ -653,7 +653,7 @@ const tabs = computed(() => {
       name: 'WhatsApp',
       label: __('WhatsApp'),
       icon: WhatsAppIcon,
-      condition: () => whatsappEnabled.value,
+      condition: () => canUseWhatsApp.value,
     },
     // Keep last: Activities gets the tabs without it (activityTabs), so
     // the indexes of the other tabs must stay the same.
