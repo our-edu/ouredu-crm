@@ -142,7 +142,7 @@ router.beforeEach(async (to, from, next) => {
   router.previousRoute = from
 
   const { isLoggedIn } = sessionStore()
-  const { users, isCrmUser } = usersStore()
+  const { users, isCrmUser, isWhatsAppManager } = usersStore()
 
   if (isLoggedIn && !users.fetched) {
     try {
@@ -180,6 +180,8 @@ router.beforeEach(async (to, from, next) => {
     window.location.href = '/login?redirect-to=/crm'
   } else if (to.matched.length === 0) {
     next({ name: 'Invalid Page' })
+  } else if (to.name === 'WA Leads' && !isWhatsAppManager()) {
+    next({ name: 'Not Permitted' })
   } else if (['Deal', 'Lead'].includes(to.name) && !to.hash) {
     let storageKey = to.name === 'Deal' ? 'lastDealTab' : 'lastLeadTab'
     const activeTab = localStorage.getItem(storageKey) || 'activity'

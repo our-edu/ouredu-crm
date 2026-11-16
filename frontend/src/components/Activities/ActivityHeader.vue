@@ -116,7 +116,7 @@ import TaskIcon from '@/components/Icons/TaskIcon.vue'
 import AttachmentIcon from '@/components/Icons/AttachmentIcon.vue'
 import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
 import { globalStore } from '@/stores/global'
-import { whatsappEnabled } from '@/composables/whatsapp'
+import { canUseWhatsApp } from '@/composables/whatsapp'
 import { callEnabled } from '@/composables/telephony'
 import { Dropdown, TextInput } from 'frappe-ui'
 import { computed, h } from 'vue'
@@ -193,7 +193,7 @@ const defaultActions = computed(() => {
       icon: h(WhatsAppIcon, { class: 'h-4 w-4' }),
       label: __('WhatsApp Message'),
       onClick: () => (tabIndex.value = getTabIndex('WhatsApp')),
-      condition: () => whatsappEnabled.value,
+      condition: () => canUseWhatsApp.value,
     },
   ]
   return actions.filter((action) =>

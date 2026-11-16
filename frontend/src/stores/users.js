@@ -69,6 +69,14 @@ export const usersStore = defineStore('crm-users', () => {
     return getUser(email).is_telphony_agent
   }
 
+  function hasRole(role, email) {
+    return Boolean(getUser(email).roles?.includes(role))
+  }
+
+  function isWhatsAppManager(email) {
+    return hasRole('WhatsApp Manager', email)
+  }
+
   function getUserRole(email) {
     const user = getUser(email)
     if (user && user.role) {
@@ -92,6 +100,8 @@ export const usersStore = defineStore('crm-users', () => {
     isSalesUser,
     isTelephonyAgent,
     getUserRole,
+    hasRole,
+    isWhatsAppManager,
     isWebsiteUser,
     isCrmUser,
   }
