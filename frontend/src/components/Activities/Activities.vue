@@ -143,6 +143,7 @@
                 ),
                 'h-8': [
                   'comment',
+                  'external_communication',
                   'communication',
                   'incoming_call',
                   'outgoing_call',
@@ -194,6 +195,16 @@
             class="mb-4"
           >
             <CommentArea :activity="activity" />
+          </div>
+          <div
+            v-else-if="activity.activity_type == 'external_communication'"
+            class="mb-4"
+          >
+            <ExternalCommunicationArea
+              :activity="activity"
+              :doctype="doctype"
+              :docname="docname"
+            />
           </div>
           <div
             v-else-if="activity.activity_type == 'attachment_log'"
@@ -459,6 +470,7 @@
 import ActivityHeader from '@/components/Activities/ActivityHeader.vue'
 import EmailArea from '@/components/Activities/EmailArea.vue'
 import CommentArea from '@/components/Activities/CommentArea.vue'
+import ExternalCommunicationArea from '@/components/Activities/ExternalCommunicationArea.vue'
 import CallArea from '@/components/Activities/CallArea.vue'
 import NoteArea from '@/components/Activities/NoteArea.vue'
 import TaskArea from '@/components/Activities/TaskArea.vue'
@@ -474,6 +486,7 @@ import NoteIcon from '@/components/Icons/NoteIcon.vue'
 import TaskIcon from '@/components/Icons/TaskIcon.vue'
 import AttachmentIcon from '@/components/Icons/AttachmentIcon.vue'
 import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
+import LucideLinkedin from '~icons/lucide/linkedin'
 import EventArea from '@/components/Activities/EventArea.vue'
 import WhatsAppArea from '@/components/Activities/WhatsAppArea.vue'
 import WhatsAppBox from '@/components/Activities/WhatsAppBox.vue'
@@ -783,6 +796,13 @@ const activities = computed(() => {
 
   _activities.forEach((activity) => {
     activity.icon = timelineIcon(activity.activity_type, activity.is_lead)
+
+    if (activity.activity_type == 'external_communication') {
+      activity.icon = markRaw(
+        activity.data.medium == 'Whatsapp' ? WhatsAppIcon : LucideLinkedin,
+      )
+      return
+    }
 
     if (
       activity.activity_type == 'incoming_call' ||

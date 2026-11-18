@@ -115,6 +115,7 @@ import NoteIcon from '@/components/Icons/NoteIcon.vue'
 import TaskIcon from '@/components/Icons/TaskIcon.vue'
 import AttachmentIcon from '@/components/Icons/AttachmentIcon.vue'
 import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
+import LucideMessageSquareShare from '~icons/lucide/message-square-share'
 import { globalStore } from '@/stores/global'
 import { canUseWhatsApp } from '@/composables/whatsapp'
 import { callEnabled } from '@/composables/telephony'
@@ -173,6 +174,11 @@ const defaultActions = computed(() => {
       label: __('Make a Call'),
       onClick: () => makeCall(props.doc.mobile_no),
       condition: () => callEnabled.value,
+    },
+    {
+      icon: h(LucideMessageSquareShare, { class: 'h-4 w-4' }),
+      label: __('Contacted via'),
+      onClick: () => props.modalRef.showExternalCommunication(),
     },
     {
       icon: h(NoteIcon, { class: 'h-4 w-4' }),

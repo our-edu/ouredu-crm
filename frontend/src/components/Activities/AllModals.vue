@@ -142,6 +142,26 @@ function createCallLog() {
   })
 }
 
+// External Communications (contacts made outside the CRM, e.g. on LinkedIn)
+function showExternalCommunication() {
+  showModal({
+    doctype: 'External Communication',
+    title: 'External Communication',
+    defaults: {
+      contacted_on: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+      medium: 'Linkedin',
+      reference_doctype: props.doctype,
+      reference_docname: props.doc?.name,
+    },
+    callbacks: {
+      afterInsert: () => {
+        activities.value.reload()
+        redirect('activity')
+      },
+    },
+  })
+}
+
 // common
 const route = useRoute()
 const router = useRouter()
@@ -162,5 +182,6 @@ defineExpose({
   updateTaskStatus,
   showNote,
   createCallLog,
+  showExternalCommunication,
 })
 </script>
