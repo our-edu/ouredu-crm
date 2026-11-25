@@ -96,34 +96,34 @@
         <!-- Choice question -->
         <div v-if="question.type === 'Choices'" class="space-y-2">
           <label
-            v-for="n in 4"
-            v-show="question[`option_${n}`]"
+            v-for="(option, n) in question.options || []"
+            v-show="option"
             :key="n"
             class="flex items-center gap-3 rounded-md bg-surface-gray-2 px-3 py-2.5 cursor-pointer hover:bg-surface-gray-3 transition-colors"
             :class="{
               'ring-2 ring-outline-blue-3 bg-surface-blue-1':
                 question.multiple
-                  ? selectedAnswers[question.name]?.includes(question[`option_${n}`])
-                  : selectedAnswers[question.name] === question[`option_${n}`],
+                  ? selectedAnswers[question.name]?.includes(option)
+                  : selectedAnswers[question.name] === option,
             }"
           >
             <input
               v-if="!question.multiple"
               type="radio"
               :name="question.name"
-              :value="question[`option_${n}`]"
+              :value="option"
               v-model="selectedAnswers[question.name]"
               class="w-3.5 h-3.5 text-ink-blue-3 focus:ring-outline-blue-3"
             />
             <input
               v-else
               type="checkbox"
-              :value="question[`option_${n}`]"
-              :checked="selectedAnswers[question.name]?.includes(question[`option_${n}`])"
-              @change="toggleCheckbox(question.name, question[`option_${n}`])"
+              :value="option"
+              :checked="selectedAnswers[question.name]?.includes(option)"
+              @change="toggleCheckbox(question.name, option)"
               class="w-3.5 h-3.5 text-ink-blue-3 rounded-sm focus:ring-outline-blue-3"
             />
-            <span class="text-sm text-ink-gray-9" v-html="question[`option_${n}`]" />
+            <span class="text-sm text-ink-gray-9" v-html="option" />
           </label>
         </div>
 
