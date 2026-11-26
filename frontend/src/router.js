@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { usersStore } from '@/stores/users'
 import { sessionStore } from '@/stores/session'
 import { viewsStore } from '@/stores/views'
+import { canUseMarketing } from '@/components/Marketing/marketing'
 
 const routes = [
   {
@@ -82,6 +83,49 @@ const routes = [
     path: '/organizations/:organizationId',
     name: 'Organization',
     component: () => import(`@/pages/${handleMobileView('Organization')}.vue`),
+    props: true,
+  },
+  // Marketing Workflow (Meta lead ads): Pages, Forms, Leads
+  {
+    alias: '/marketing/pages',
+    path: '/marketing/pages/view/:viewType?',
+    name: 'Marketing Pages',
+    component: () => import('@/pages/MarketingPages.vue'),
+  },
+  {
+    path: '/marketing/pages/:pageId',
+    name: 'Marketing Page',
+    component: () => import('@/pages/MarketingPage.vue'),
+    props: true,
+  },
+  {
+    alias: '/marketing/forms',
+    path: '/marketing/forms/view/:viewType?',
+    name: 'Marketing Forms',
+    component: () => import('@/pages/MarketingForms.vue'),
+  },
+  {
+    path: '/marketing/forms/:formId',
+    name: 'Marketing Form',
+    component: () => import('@/pages/MarketingForm.vue'),
+    props: true,
+  },
+  {
+    alias: '/marketing/leads',
+    path: '/marketing/leads/view/:viewType?',
+    name: 'Marketing Leads',
+    component: () => import('@/pages/MarketingLeads.vue'),
+  },
+  {
+    path: '/marketing/leads/:leadId',
+    name: 'Marketing Lead',
+    component: () => import('@/pages/MarketingLead.vue'),
+    props: true,
+  },
+  {
+    path: '/marketing/templates/:templateId',
+    name: 'Marketing Template',
+    component: () => import('@/pages/MarketingTemplate.vue'),
     props: true,
   },
   {
@@ -181,6 +225,9 @@ router.beforeEach(async (to, from, next) => {
   } else if (to.matched.length === 0) {
     next({ name: 'Invalid Page' })
   } else if (to.name === 'WA Leads' && !isWhatsAppManager()) {
+    next({ name: 'Not Permitted' })
+  } else if (String(to.name).startsWith('Marketing ') && !canUseMarketing()) {
+    // Marketing Workflow: Marketing Managers / Users and System Managers only
     next({ name: 'Not Permitted' })
   } else if (['Deal', 'Lead'].includes(to.name) && !to.hash) {
     let storageKey = to.name === 'Deal' ? 'lastDealTab' : 'lastLeadTab'

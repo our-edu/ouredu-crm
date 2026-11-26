@@ -178,6 +178,10 @@ import EmailIcon from '@/components/Icons/EmailIcon.vue'
 import StepsIcon from '@/components/Icons/StepsIcon.vue'
 import CollapsibleSection from '@/components/CollapsibleSection.vue'
 import PinIcon from '@/components/Icons/PinIcon.vue'
+import LucideFlag from '~icons/lucide/flag'
+import LucideClipboardList from '~icons/lucide/clipboard-list'
+import LucideUserPlus from '~icons/lucide/user-plus'
+import { canUseMarketing } from '@/components/Marketing/marketing'
 import UserDropdown from '@/components/UserDropdown.vue'
 import SquareAsterisk from '@/components/Icons/SquareAsterisk.vue'
 import LeadsIcon from '@/components/Icons/LeadsIcon.vue'
@@ -290,6 +294,12 @@ const links = [
   },
 ]
 
+const marketingLinks = [
+  { label: 'Pages', icon: LucideFlag, to: 'Marketing Pages' },
+  { label: 'Forms', icon: LucideClipboardList, to: 'Marketing Forms' },
+  { label: 'Leads', icon: LucideUserPlus, to: 'Marketing Leads' },
+]
+
 const allViews = computed(() => {
   let _views = [
     {
@@ -304,6 +314,15 @@ const allViews = computed(() => {
       }),
     },
   ]
+  // Marketing team's section: Meta lead ads pages, forms and leads
+  if (canUseMarketing()) {
+    _views.push({
+      name: 'Marketing Workflow',
+      opened: true,
+      views: marketingLinks,
+    })
+  }
+
   if (getPublicViews().length) {
     _views.push({
       name: 'Public Views',
